@@ -232,3 +232,24 @@ float PdfAtoW(
 {
     return aPdfA * Sqr(aDist) / std::abs(aCosThere);
 }
+
+
+//////////////////////////////////////////////////////////////////////////
+// Uniform hemisphere sampling
+
+Vec3f sampleUniformHemisphere(const Vec2f& samples, float* oPdf)
+{
+	// (1 - cos(theta)) is CDF
+	float theta = std::acos(1 - samples.y);
+	float phi = samples.x * 2* PI_F;
+
+	Vec3f mappedSamples =
+		Vec3f (
+			cos(phi)*sin(theta),
+			sin(phi)*sin(theta),
+			cos(theta)
+		);
+
+	*oPdf = std::sin(theta) / (2 * PI_F);
+  return mappedSamples;
+}

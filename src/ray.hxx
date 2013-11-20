@@ -27,7 +27,7 @@ struct Ray
 
 struct Isect
 {
-    Isect()
+    Isect() : dist(INFTY_F)
     {}
 
     Isect(float aMaxDist):dist(aMaxDist)
