@@ -11,3 +11,13 @@
 *.lai
 *.la
 *.a
+
+# Other
+*.opensdf
+*.sdf
+*.suo
+
+# Folders
+ipch
+Debug
+Release
