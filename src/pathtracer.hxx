@@ -86,9 +86,10 @@ public:
         {
           if (lightIsect.lightID >= 0)
           {
-            float cosTheta = Dot(frame.mZ, ray.dir);
-            float distSqr = lightIsect.dist;
-            LoDirect = mScene.mLights[lightIsect.lightID]->getRadiance()
+            float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
+            float cosThetaIn = std::abs(Dot(frame.mZ, ray.dir));
+            float distSqr = lightIsect.dist * lightIsect.dist;
+            LoDirect = mScene.mLights[lightIsect.lightID]->getRadiance() * cosThetaOut
               * mat.evalBrdf(sampleHemisfere, wol) / (pdf );
           }
         }
