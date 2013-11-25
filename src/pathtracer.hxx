@@ -103,9 +103,6 @@ public:
         }
 #endif
 
-        if (isect.lightID >= 0)
-					LoDirect = mScene.mLights[isect.lightID]->getRadiance();
-
 				mFramebuffer.AddColor(sample, LoDirect);
 
 				/*
