@@ -43,12 +43,20 @@ public:
 
 			if(mScene.Intersect(ray, isect))
 			{
+				Vec3f LoDirect = Vec3f(0);
+
+        // if the ray intersected a light source, simply add radiance and continue
+        if (isect.lightID >= 0)
+        {
+					LoDirect = mScene.mLights[isect.lightID]->getRadiance();
+          mFramebuffer.AddColor(sample, LoDirect);
+          continue;
+        }
+
 				const Vec3f surfPt = ray.org + ray.dir * isect.dist;
 				Frame frame;
 				frame.SetFromZ(isect.normal);
 				const Vec3f wol = frame.ToLocal(-ray.dir);
-
-				Vec3f LoDirect = Vec3f(0);
 
 				const Material& mat = mScene.GetMaterial( isect.matID );
 
