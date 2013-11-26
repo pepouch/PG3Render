@@ -20,7 +20,7 @@ public:
 
   Vec3f evalBrdf( const Vec3f& wil, const Vec3f& wol ) const
   {
-    return this->evalBrdfDiffuse(wil, wol) + this->evalBrdf(wil, wol);
+    return this->evalBrdfDiffuse(wil, wol) + this->evalBrdfSpecular(wil, wol);
   }
 
 private:
