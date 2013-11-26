@@ -64,6 +64,8 @@ public:
       dir = this->sampleSpecular(sample, &pdf, wol);
       *oPdf = pdf * probSpecular;
       *oBrdf = this->evalBrdfSpecular(dir, wol);
+      if (dir.z < 0)
+        *oBrdf = Vec3f(0);
     }
     return dir;
   }
@@ -75,10 +77,10 @@ private:
     Vec3f result (
       cos(2*PI_F*sample.x) * sqrt(1-sample.y),
       sin(2*PI_F*sample.x) * sqrt(1-sample.y),
-      sqrt(sample.y)
+      sqrt(sample.y)  
       );
-    float theta = acos(sqrt(sample.y));
-    *pdf = cos(theta) / PI_F;
+    float cosTheta = sqrt(sample.y);
+    *pdf = cosTheta / PI_F;
     return result;
   }
 
@@ -99,7 +101,7 @@ private:
 
     float theta = acos(poweredTerm);
 
-    *pdf = (this->mPhongExponent + 1) / ((2 * PI_F) * pow(cos(theta), this->mPhongExponent));
+    *pdf = (this->mPhongExponent + 1) / ((2 * PI_F) / pow(cos(theta), this->mPhongExponent));
     return result;
   }
 

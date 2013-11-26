@@ -1,7 +1,7 @@
 #pragma once
 
 #define TASK_NUMBER 2
-#define SUBTASK_NUMBER 2
+#define SUBTASK_NUMBER 1
 
 #include <vector>
 #include <cmath>
@@ -82,15 +82,17 @@ public:
 				Vec2f randomVec = this->mRng.GetVec2f();
 				float pdf = 0;
         Vec3f brdf(0);
-        Vec3f sampleHemisfere;
+        Vec3f sampleHemisphere;
 #if (SUBTASK_NUMBER == 1)
-				sampleHemisfere = sampleUniformHemisphere(randomVec, &pdf);
+				sampleHemisphere = SamplePowerCosHemisphereW(randomVec, 0, &pdf);
+				//sampleHemisphere = sampleUniformHemisphere(randomVec, &pdf);
+        brdf = mat.evalBrdf(sampleHemisphere, wol);
 #elif (SUBTASK_NUMBER == 2)
         sampleHemisfere = mat.sampleBrdfHemisphere(randomVec, &pdf, &brdf, wol, this->mRng);
 #endif
         Vec3f origin = ray.org + isect.dist * ray.dir;
 				Isect lightIsect;
-        Ray   reflectedRay(origin, frame.ToWorld(sampleHemisfere), EPSILON_F);
+        Ray   reflectedRay(origin, frame.ToWorld(sampleHemisphere), EPSILON_F);
 				if(mScene.Intersect(reflectedRay, lightIsect))
         {
           if (lightIsect.lightID >= 0)
@@ -98,8 +100,23 @@ public:
             float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
             float cosThetaIn = std::abs(Dot(frame.mZ, ray.dir));
             float distSqr = lightIsect.dist * lightIsect.dist;
+            float cosGammaLight = mScene.GetLightPtr(lightIsect.lightID)->getCosGamma(-reflectedRay.dir);
             LoDirect = mScene.mLights[lightIsect.lightID]->getRadiance() * cosThetaOut
               * brdf / (pdf);
+          }
+        }
+        else
+        {
+          for(size_t i=0; i<mScene.GetLightCount(); i++)
+				  {
+					  const AbstractLight* light = mScene.GetLightPtr(i);
+            if (light->isBackground())
+            {
+              float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
+              LoDirect = light->getRadiance() * cosThetaOut
+              * brdf / (pdf);
+              break;
+            }
           }
         }
 #endif

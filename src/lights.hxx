@@ -15,6 +15,11 @@ public:
 	}
 
 	virtual Vec3f getRadiance() const = 0;
+  virtual bool isBackground() const { return false; }
+  virtual float getCosGamma(const Vec3f& dir) const
+  {
+    return 1;
+  }
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -70,6 +75,11 @@ public:
 	{
 		return this->mRadiance;
 	}
+
+  virtual float getCosGamma(const Vec3f& dir) const override
+  {
+    return Dot(this->mFrame.mZ, dir);
+  }
 
 public:
 	Vec3f p0, e1, e2;
@@ -132,6 +142,8 @@ public:
 
 public:
 
+  bool isBackground() const override { return true; }
+
 	virtual Vec3f sampleIllumination(
 		Rng& rng,
 		const Vec3f& aSurfPt, 
@@ -157,7 +169,6 @@ public:
 
 		if(cosTheta <= 0)
 			return Vec3f(0);
-		//   printf("%f %f %f %f\n", mBackgroundColor.x, mBackgroundColor.y, mBackgroundColor.z, cosTheta);
 		return mBackgroundColor * cosTheta * 4 * PI_F;
 	}
 
