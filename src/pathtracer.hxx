@@ -81,11 +81,12 @@ public:
 #elif (TASK_NUMBER == 2)
 				Vec2f randomVec = this->mRng.GetVec2f();
 				float pdf = 0;
+        Vec3f brdf(0);
         Vec3f sampleHemisfere;
 #if (SUBTASK_NUMBER == 1)
 				sampleHemisfere = sampleUniformHemisphere(randomVec, &pdf);
 #elif (SUBTASK_NUMBER == 2)
-        sampleHemisfere = mat.sampleBrdfHemisphere(randomVec, &pdf, this->mRng);
+        sampleHemisfere = mat.sampleBrdfHemisphere(randomVec, &pdf, &brdf, wol, this->mRng);
 #endif
         Vec3f origin = ray.org + isect.dist * ray.dir;
 				Isect lightIsect;
@@ -98,7 +99,7 @@ public:
             float cosThetaIn = std::abs(Dot(frame.mZ, ray.dir));
             float distSqr = lightIsect.dist * lightIsect.dist;
             LoDirect = mScene.mLights[lightIsect.lightID]->getRadiance() * cosThetaOut
-              * mat.evalBrdf(sampleHemisfere, wol) / (pdf );
+              * brdf / (pdf);
           }
         }
 #endif
