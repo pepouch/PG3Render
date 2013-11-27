@@ -1,7 +1,7 @@
 #pragma once
 
 #define TASK_NUMBER 2
-#define SUBTASK_NUMBER 1
+#define SUBTASK_NUMBER 2
 
 #include <vector>
 #include <cmath>
@@ -9,7 +9,7 @@
 #include <cassert>
 #include "renderer.hxx"
 #include "rng.hxx"
-#include "utils.hxx"
+
 
 // Right now this is a copy of EyeLight renderer. The task is to change this 
 // to a full-fledged path tracer.
@@ -46,13 +46,10 @@ public:
 				Vec3f LoDirect = Vec3f(0);
 
         // if the ray intersected a light source, simply add radiance and continue
-        if (isect.lightID >= 0)
-        {
-					LoDirect = mScene.mLights[isect.lightID]->getRadiance();
-          mFramebuffer.AddColor(sample, LoDirect);
-          continue;
-        }
-
+				if (isect.lightID >= 0)
+					LoDirect = mScene.GetLightPtr(isect.lightID)->getRadiance();
+				else
+				{			
 				const Vec3f surfPt = ray.org + ray.dir * isect.dist;
 				Frame frame;
 				frame.SetFromZ(isect.normal);
@@ -86,21 +83,22 @@ public:
 #if (SUBTASK_NUMBER == 1)
 				sampleHemisphere = SamplePowerCosHemisphereW(randomVec, 0, &pdf);
 				//sampleHemisphere = sampleUniformHemisphere(randomVec, &pdf);
-        brdf = mat.evalBrdf(sampleHemisphere, wol);
+        brdf = mat.evalBrdf(wol, sampleHemisphere);
 #elif (SUBTASK_NUMBER == 2)
-        sampleHemisfere = mat.sampleBrdfHemisphere(randomVec, &pdf, &brdf, wol, this->mRng);
+        sampleHemisphere = mat.sampleBrdfHemisphere(randomVec, &pdf, &brdf, wol, this->mRng);
+        //brdf = mat.evalBrdf(wol, sampleHemisphere);
 #endif
-        Vec3f origin = ray.org + isect.dist * ray.dir;
-				Isect lightIsect;
-        Ray   reflectedRay(origin, frame.ToWorld(sampleHemisphere), EPSILON_F);
+        Ray   reflectedRay(surfPt, frame.ToWorld(sampleHemisphere)/* Vec3f(0.2, 0.2, 1)*/, 0.001);
+        Isect lightIsect;
+        lightIsect.dist = 1e36f;
 				if(mScene.Intersect(reflectedRay, lightIsect))
         {
           if (lightIsect.lightID >= 0)
           {
             float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
-            float cosThetaIn = std::abs(Dot(frame.mZ, ray.dir));
+            float cosThetaIn = std::abs(Dot(frame.mZ, -ray.dir));
             float distSqr = lightIsect.dist * lightIsect.dist;
-            float cosGammaLight = mScene.GetLightPtr(lightIsect.lightID)->getCosGamma(-reflectedRay.dir);
+            float cosGammaLight = mScene.mLights[lightIsect.lightID]->getCosGamma(-reflectedRay.dir);
             LoDirect = mScene.mLights[lightIsect.lightID]->getRadiance() * cosThetaOut
               * brdf / (pdf);
           }
@@ -113,11 +111,10 @@ public:
             if (light->isBackground())
             {
               float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
-              LoDirect = light->getRadiance() * cosThetaOut
-              * brdf / (pdf);
-              break;
+              LoDirect += (cosThetaOut / pdf) * light->getRadiance() * brdf ;
             }
           }
+        }
         }
 #endif
 
