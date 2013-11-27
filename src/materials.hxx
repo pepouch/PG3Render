@@ -37,7 +37,7 @@ private:
     if( wil.z <= 0 && wol.z <= 0)
       return Vec3f(0);
 
-    Vec3f r = ((2 * Dot(Vec3f(0, 0, 1), wil)) * Vec3f(0, 0, 1)) - wil;
+    Vec3f r = (2 * wil.z * Vec3f(0, 0, 1)) - wil;
     float cosTheta = Dot(wol, r);
     return (mPhongExponent+2) * pow(cosTheta, mPhongExponent) * mPhongReflectance / (2*PI_F);
   }
@@ -64,8 +64,6 @@ public:
       dir = this->sampleSpecular(sample, &pdf, wol);
       *oPdf = pdf * probSpecular;
       *oBrdf = this->evalBrdfSpecular(dir, wol);
-      if (dir.z < 0)
-        *oBrdf = Vec3f(0);
     }
     return dir;
   }
@@ -100,8 +98,7 @@ private:
     result = reflectedRayFrame.ToLocal(result);
 
     float theta = acos(poweredTerm);
-
-    *pdf = (this->mPhongExponent + 1) / ((2 * PI_F) / pow(cos(theta), this->mPhongExponent));
+    *pdf = (this->mPhongExponent + 1) * pow(cos(theta), this->mPhongExponent) / ((2 * PI_F));
     return result;
   }
 
