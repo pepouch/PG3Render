@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PATHTRACER_HXX_
+#define PATHTRACER_HXX_
 
 #define TASK_NUMBER 2
 #define SUBTASK_NUMBER 2
@@ -142,3 +143,5 @@ public:
 
 	Rng              mRng;
 };
+
+#endif // PATHTRACER_HXX_
