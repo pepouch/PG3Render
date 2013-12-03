@@ -86,23 +86,21 @@ private:
 
   Vec3f sampleSpecular(const Vec2f &sample, float* pdf, const Vec3f& wol) const
   {
-    float poweredTerm = pow(sample.y, 1.f / (this->mPhongExponent + 1.f));
-    float sqrtTerm = sqrt(1 - pow(sample.y, (2.f / this->mPhongExponent + 1.f)));
+    float cosTheta = pow(sample.y, 1.f / (this->mPhongExponent + 1.f));
+    float sinTheta = sqrt(1.f - pow(sample.y, (2.f / this->mPhongExponent + 1.f)));
 
     Vec3f result (
-      cos(2.f * PI_F * sample.x) * sqrtTerm,
-      sin(2.f * PI_F * sample.x) * sqrtTerm,
-      poweredTerm
+      cos(2.f * PI_F * sample.x) * sinTheta,
+      sin(2.f * PI_F * sample.x) * sinTheta,
+      cosTheta
       );
 
     Frame reflectedRayFrame;
-    Vec3f r = (2.f * wol.z) * Vec3f(0, 0, 1) - wol;
+    Vec3f r = Vec3f(0, 0, 2.f * wol.z) - wol;
     reflectedRayFrame.SetFromZ(r);
     result = reflectedRayFrame.ToWorld(result);
 
-    float theta = acos(poweredTerm);
-
-    *pdf = (this->mPhongExponent + 1.f) / ((2.f * PI_F) / pow(cos(theta), this->mPhongExponent));
+    *pdf = (this->mPhongExponent + 1.f) * pow(cosTheta, this->mPhongExponent) / (2.f * PI_F) ;
     return result;
   }
 
