@@ -104,6 +104,23 @@ private:
     return result;
   }
 
+  float getPdf(const Vec3f& wil, const Vec3f& wol)
+  {
+    float pdfDiffuse, pdfSpecular;
+
+    float maxDiffuse = this->mDiffuseReflectance.Max();
+    float maxSpecular = this->mPhongReflectance.Max();
+    float probDiffuse = maxDiffuse / (maxDiffuse + maxSpecular);
+    float probSpecular = maxSpecular / (maxDiffuse + maxSpecular);
+
+    pdfDiffuse = wil.z / PI_F;
+    Vec3f r = Vec3f(0, 0, 2.f * wol.z) - wol;
+    float cosTheta = Dot(r, wil);
+    pdfSpecular = (this->mPhongExponent + 1.f) * pow(cosTheta, this->mPhongExponent) / (2.f * PI_F) ;
+
+    return probDiffuse * pdfDiffuse + probSpecular * pdfSpecular;
+  }
+
 public:
 
   Vec3f mDiffuseReflectance;
