@@ -26,7 +26,7 @@ public:
 private:
   Vec3f evalBrdfDiffuse( const Vec3f& wil, const Vec3f& wol ) const
   {
-    if( wil.z <= 0 && wol.z <= 0)
+    if( wil.z <= 0 || wol.z <= 0)
       return Vec3f(0);
 
     return mDiffuseReflectance / PI_F;
@@ -34,7 +34,7 @@ private:
 
   Vec3f evalBrdfSpecular( const Vec3f& wil, const Vec3f& wol ) const
   {
-    if( wil.z <= 0 && wol.z <= 0)
+    if( wil.z <= 0 || wol.z <= 0)
       return Vec3f(0);
 
     Vec3f r = ((2 * Dot(Vec3f(0, 0, 1), wil)) * Vec3f(0, 0, 1)) - wil;
@@ -96,8 +96,9 @@ private:
       );
 
     Frame reflectedRayFrame;
-    reflectedRayFrame.SetFromZ(wol);
-    result = reflectedRayFrame.ToLocal(result);
+    Vec3f r = ((2 * Dot(Vec3f(0, 0, 1), wol)) * Vec3f(0, 0, 1)) - wol;
+    reflectedRayFrame.SetFromZ(r);
+    result = reflectedRayFrame.ToWorld(result);
 
     float theta = acos(poweredTerm);
 
