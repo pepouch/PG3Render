@@ -87,7 +87,7 @@ private:
   Vec3f sampleSpecular(const Vec2f &sample, float* pdf, const Vec3f& wol) const
   {
     float cosTheta = pow(sample.y, 1.f / (this->mPhongExponent + 1.f));
-    float sinTheta = sqrt(1.f - pow(sample.y, (2.f / this->mPhongExponent + 1.f)));
+    float sinTheta = sqrt(1.f - pow(sample.y, 2.f / (this->mPhongExponent + 1.f)));
 
     Vec3f result (
       cos(2.f * PI_F * sample.x) * sinTheta,
