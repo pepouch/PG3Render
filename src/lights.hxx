@@ -182,7 +182,7 @@ public:
 		Vec3f p;
 		do
 		{
-			p = Vec3f(2.0*rng.GetFloat()-1.0, 2.0*rng.GetFloat()-1.0, 2.0*rng.GetFloat()-1.0);
+			p = Vec3f(2.0f*rng.GetFloat()-1.0f, 2.0f*rng.GetFloat()-1.0f, 2.0f*rng.GetFloat()-1.0f);
 		}
 		while (p.LenSqr() > 1) ;
 		p =  (1/p.Length()) * p;

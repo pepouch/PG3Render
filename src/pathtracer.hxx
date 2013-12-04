@@ -46,131 +46,131 @@ public:
 			{
 				Vec3f LoDirect = Vec3f(0);
 
-        // if the ray intersected a light source, simply add radiance and continue
+				// if the ray intersected a light source, simply add radiance and continue
 				if (isect.lightID >= 0)
 					LoDirect = mScene.GetLightPtr(isect.lightID)->getRadiance();
 				else
 				{			
-				const Vec3f surfPt = ray.org + ray.dir * isect.dist;
-				Frame frame;
-				frame.SetFromZ(isect.normal);
-				const Vec3f wol = frame.ToLocal(-ray.dir);
+					const Vec3f surfPt = ray.org + ray.dir * isect.dist;
+					Frame frame;
+					frame.SetFromZ(isect.normal);
+					const Vec3f wol = frame.ToLocal(-ray.dir);
 
-				const Material& mat = mScene.GetMaterial( isect.matID );
+					const Material& mat = mScene.GetMaterial( isect.matID );
 
 #if (TASK_NUMBER == 1)
-				for(size_t i=0; i<mScene.GetLightCount(); i++)
-				{
-					const AbstractLight* light = mScene.GetLightPtr(i);
-					assert(light != 0);
-
-					Vec3f wig; float lightDist;
-					Vec3f illum(0);
-
-					illum = light->sampleIllumination(mRng, surfPt, frame, wig, lightDist);
-
-					if(illum.Max() > 0)
+					for(size_t i=0; i<mScene.GetLightCount(); i++)
 					{
-						if( ! mScene.Occluded(surfPt, wig, lightDist) )
-							LoDirect += illum * mat.evalBrdf(frame.ToLocal(wig), wol);
+						const AbstractLight* light = mScene.GetLightPtr(i);
+						assert(light != 0);
+
+						Vec3f wig; float lightDist;
+						Vec3f illum(0);
+
+						illum = light->sampleIllumination(mRng, surfPt, frame, wig, lightDist);
+
+						if(illum.Max() > 0)
+						{
+							if( ! mScene.Occluded(surfPt, wig, lightDist) )
+								LoDirect += illum * mat.evalBrdf(frame.ToLocal(wig), wol);
+						}
 					}
-				}
-				
+
 #elif (TASK_NUMBER == 2)
-				Vec2f randomVec = this->mRng.GetVec2f();
-				float pdf = 0;
-        Vec3f brdf(0);
-        Vec3f sampleHemisphere;
+					Vec2f randomVec = this->mRng.GetVec2f();
+					float pdf = 0;
+					Vec3f brdf(0);
+					Vec3f sampleHemisphere;
 #if (SUBTASK_NUMBER == 1)
-				sampleHemisphere = SamplePowerCosHemisphereW(randomVec, 0, &pdf);
-				//sampleHemisphere = sampleUniformHemisphere(randomVec, &pdf);
-        brdf = mat.evalBrdf(wol, sampleHemisphere);
+					sampleHemisphere = SamplePowerCosHemisphereW(randomVec, 0, &pdf);
+					//sampleHemisphere = sampleUniformHemisphere(randomVec, &pdf);
+					brdf = mat.evalBrdf(wol, sampleHemisphere);
 #elif (SUBTASK_NUMBER == 2)
-        sampleHemisphere = mat.sampleBrdfHemisphere(randomVec, &pdf, &brdf, wol, this->mRng);
-        //brdf = mat.evalBrdf(wol, sampleHemisphere);
+					sampleHemisphere = mat.sampleBrdfHemisphere(randomVec, &pdf, &brdf, wol, this->mRng);
+					//brdf = mat.evalBrdf(wol, sampleHemisphere);
 #endif
-        Ray   reflectedRay(surfPt, frame.ToWorld(sampleHemisphere)/* Vec3f(0.2, 0.2, 1)*/, 0.001);
-        Isect lightIsect;
-        lightIsect.dist = 1e36f;
-				if(mScene.Intersect(reflectedRay, lightIsect))
-        {
-          if (lightIsect.lightID >= 0)
-          {
-            float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
-            float cosThetaIn = std::abs(Dot(frame.mZ, -ray.dir));
-            float distSqr = lightIsect.dist * lightIsect.dist;
-            float cosGammaLight = mScene.mLights[lightIsect.lightID]->getCosGamma(-reflectedRay.dir);
-            LoDirect = mScene.mLights[lightIsect.lightID]->getRadiance() * cosThetaOut
-              * brdf / (pdf);
-          }
-        }
-        else
-        {
-          for(int i=0; i<mScene.GetLightCount(); i++)
-				  {
-					  const AbstractLight* light = mScene.GetLightPtr(i);
-            if (light->isBackground())
-            {
-              float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
-              LoDirect += (cosThetaOut / pdf) * light->getRadiance() * brdf ;
-            }
-          }
-        }
-#elif (TASK_NUMBER == 3)
-        for (int i=0; i<mScene.GetLightCount(); i++)
-				{
-					const AbstractLight* light = mScene.GetLightPtr(i);
-					assert(light != 0);
-
-					Vec3f wig;
-          float lightDist;
-					Vec3f illum(0);
-          float pdfLight, pdfBrdf;
-
-					illum = light->sampleIllumination(mRng, surfPt, frame, wig, lightDist, pdfLight);
-          if(illum.Max() > 0)
+					Ray   reflectedRay(surfPt, frame.ToWorld(sampleHemisphere)/* Vec3f(0.2, 0.2, 1)*/, 0.001);
+					Isect lightIsect;
+					lightIsect.dist = 1e36f;
+					if(mScene.Intersect(reflectedRay, lightIsect))
 					{
-            pdfBrdf = mat.getPdf(frame.ToLocal(wig), wol);
-            float weight = 1.f /(pdfLight + pdfBrdf);
-
-						if ( ! mScene.Occluded(surfPt, wig, lightDist) )
-							LoDirect += illum * mat.evalBrdf(frame.ToLocal(wig), wol) * weight;
+						if (lightIsect.lightID >= 0)
+						{
+							float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
+							float cosThetaIn = std::abs(Dot(frame.mZ, -ray.dir));
+							float distSqr = lightIsect.dist * lightIsect.dist;
+							float cosGammaLight = mScene.mLights[lightIsect.lightID]->getCosGamma(-reflectedRay.dir);
+							LoDirect = mScene.mLights[lightIsect.lightID]->getRadiance() * cosThetaOut
+								* brdf / (pdf);
+						}
 					}
+					else
+					{
+						for(int i=0; i<mScene.GetLightCount(); i++)
+						{
+							const AbstractLight* light = mScene.GetLightPtr(i);
+							if (light->isBackground())
+							{
+								float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
+								LoDirect += (cosThetaOut / pdf) * light->getRadiance() * brdf ;
+							}
+						}
+					}
+#elif (TASK_NUMBER == 3)
+					for (int i=0; i<mScene.GetLightCount(); i++)
+					{
+						const AbstractLight* light = mScene.GetLightPtr(i);
+						assert(light != 0);
 
-          Vec2f randomVec = this->mRng.GetVec2f();
-          Vec3f brdf;
-          Vec3f sampleHemisphere = mat.sampleBrdfHemisphere(randomVec, &pdfBrdf, &brdf, wol, this->mRng);
-          Ray   reflectedRay(surfPt, frame.ToWorld(sampleHemisphere), 0.001);
-          Isect lightIsect;
-          lightIsect.dist = 1e36f;
-				  if(mScene.Intersect(reflectedRay, lightIsect))
-          {
-            if (lightIsect.lightID >= 0)
-            {
-              pdfLight = mScene.mLights[lightIsect.lightID]->getPdf(reflectedRay);
-              float weight = 1.f / (pdfLight + pdfBrdf);
-              float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
-              LoDirect += mScene.mLights[lightIsect.lightID]->getRadiance() * cosThetaOut * brdf * weight;
-            }
-          }
-          else
-          {
-            for(int i=0; i<mScene.GetLightCount(); i++)
-				    {
-					    const AbstractLight* light = mScene.GetLightPtr(i);
-              if (light->isBackground())
-              {
-                float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
-                pdfLight = light->getPdf(reflectedRay);
-                float weight = 1.f / (pdfLight + pdfBrdf);
-                LoDirect += (cosThetaOut ) * light->getRadiance() * brdf * weight;
-              }
-            }
-          }
+						Vec3f wig;
+						float lightDist;
+						Vec3f illum(0);
+						float pdfLight, pdfBrdf;
 
-				}
+						illum = light->sampleIllumination(mRng, surfPt, frame, wig, lightDist, pdfLight);
+						if(illum.Max() > 0)
+						{
+							pdfBrdf = mat.getPdf(frame.ToLocal(wig), wol);
+							float weight = 1.f /(pdfLight + pdfBrdf);
+
+							if ( ! mScene.Occluded(surfPt, wig, lightDist) )
+								LoDirect += illum * mat.evalBrdf(frame.ToLocal(wig), wol) * weight;
+						}
+
+						Vec2f randomVec = this->mRng.GetVec2f();
+						Vec3f brdf;
+						Vec3f sampleHemisphere = mat.sampleBrdfHemisphere(randomVec, &pdfBrdf, &brdf, wol, this->mRng);
+						Ray   reflectedRay(surfPt, frame.ToWorld(sampleHemisphere), 0.001f);
+						Isect lightIsect;
+						lightIsect.dist = 1e36f;
+						if(mScene.Intersect(reflectedRay, lightIsect))
+						{
+							if (lightIsect.lightID >= 0)
+							{
+								pdfLight = mScene.mLights[lightIsect.lightID]->getPdf(reflectedRay);
+								float weight = 1.f / (pdfLight + pdfBrdf);
+								float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
+								LoDirect += mScene.mLights[lightIsect.lightID]->getRadiance() * cosThetaOut * brdf * weight;
+							}
+						}
+						else
+						{
+							for(int i=0; i<mScene.GetLightCount(); i++)
+							{
+								const AbstractLight* light = mScene.GetLightPtr(i);
+								if (light->isBackground())
+								{
+									float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
+									pdfLight = light->getPdf(reflectedRay);
+									float weight = 1.f / (pdfLight + pdfBrdf);
+									LoDirect += (cosThetaOut ) * light->getRadiance() * brdf * weight;
+								}
+							}
+						}
+
+					}
 #endif
-        }
+				}
 
 				mFramebuffer.AddColor(sample, LoDirect);
 

@@ -250,6 +250,6 @@ Vec3f sampleUniformHemisphere(const Vec2f& samples, float* oPdf)
 			cos(theta)
 		);
 
-	*oPdf = std::sin(theta) / (PI_F * PI_F / 2.0);
+	*oPdf = std::sin(theta) / (PI_F * PI_F / 2.0f);
   return mappedSamples;
 }
