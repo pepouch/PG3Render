@@ -20,8 +20,8 @@ public:
 	{
 		return 1;
 	}
-	
-	virtual float getPdf(const Ray& ray) const = 0;
+	 
+	virtual float getPdf(const Ray& ray, const Isect& iSect) const = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -84,22 +84,10 @@ public:
 		return Dot(this->mFrame.mZ, dir);
 	}
 
-	virtual float getPdf(const Ray& ray) const override
+	virtual float getPdf(const Ray& ray, const Isect& iSect) const override
 	{
-		Triangle triangle1(this->p0, this->p0 + this->e1, this->p0 + this->e2, 0);
-		Triangle triangle2(this->p0 + this->e1 + this->e2, this->p0 + this->e1, this->p0 + this->e2, 0);
-
-		Isect i;
-		if (triangle1.Intersect(ray, i) || triangle2.Intersect(ray, i))
-		{
-			float cosGamma = Dot(-this->mFrame.mZ, ray.dir);
-
-			return this->mInvArea * i.dist * i.dist / cosGamma;
-		}
-		else
-		{
-			return 0;
-		}
+		float cosGamma = Dot(-this->mFrame.mZ, ray.dir);
+		return this->mInvArea * iSect.dist * iSect.dist / cosGamma;
 	}
 
 public:
@@ -146,7 +134,7 @@ public:
 		return this->mIntensity;
 	}
 
-	virtual float getPdf(const Ray& ray) const override
+	virtual float getPdf(const Ray& ray, const Isect& iSect) const override
 	{
 		return 0;
 	}
@@ -207,7 +195,7 @@ public:
 		return this->mBackgroundColor;
 	}
 
-	virtual float getPdf(const Ray& ray) const override
+	virtual float getPdf(const Ray& ray, const Isect& iSect) const override
 	{
 		return 1.f / (4.f * PI_F);
 	}

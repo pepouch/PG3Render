@@ -127,7 +127,7 @@ public:
 
 						Vec3f wig;
 						Vec3f illum(0);
-						float pdfLight, pdfBrdf;
+						float pdfLight = 0, pdfBrdf = 0;
 
 #ifdef SAMPLE_LIGHT
 						float lightDist;
@@ -144,7 +144,7 @@ public:
 
 #ifdef SAMPLE_BRDF
 						Vec2f randomVec = this->mRng.GetVec2f();
-						Vec3f brdf;
+						Vec3f brdf(0);
 						Vec3f sampleHemisphere = mat.sampleBrdfHemisphere(randomVec, &pdfBrdf, &brdf, wol, this->mRng);
 						Ray   reflectedRay(surfPt, frame.ToWorld(sampleHemisphere), 0.001f);
 						Isect lightIsect;
@@ -153,10 +153,10 @@ public:
 						{
 							if (lightIsect.lightID >= 0)
 							{
-								pdfLight = mScene.mLights[lightIsect.lightID]->getPdf(reflectedRay);
+								pdfLight = mScene.mLights[lightIsect.lightID]->getPdf(reflectedRay, lightIsect);
 								float weight = pdfBrdf / (pdfLight + pdfBrdf);
 								float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
-								LoDirect += mScene.mLights[lightIsect.lightID]->getRadiance() * cosThetaOut * brdf * (1.f / pdfBrdf) * SAMPLE_WEIGHT;
+								LoDirect += mScene.mLights[lightIsect.lightID]->getRadiance() * cosThetaOut * (brdf / pdfBrdf) * SAMPLE_WEIGHT;
 							}
 						}
 						else
@@ -167,9 +167,9 @@ public:
 								if (light->isBackground())
 								{
 									float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
-									pdfLight = light->getPdf(reflectedRay);
+                  pdfLight = light->getPdf(reflectedRay, lightIsect);
 									float weight = pdfBrdf / (pdfLight + pdfBrdf);
-									LoDirect += (cosThetaOut ) * light->getRadiance() * brdf * (1.f / pdfBrdf) * SAMPLE_WEIGHT;
+									LoDirect += (cosThetaOut ) * light->getRadiance() * (brdf / pdfBrdf) * SAMPLE_WEIGHT;
 								}
 							}
 						}
