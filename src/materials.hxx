@@ -103,8 +103,8 @@ private:
     *pdf = (this->mPhongExponent + 1.f) * pow(cosTheta, this->mPhongExponent) / (2.f * PI_F) ;
     return result;
   }
-
-  float getPdf(const Vec3f& wil, const Vec3f& wol)
+public:
+  float getPdf(const Vec3f& wil, const Vec3f& wol) const
   {
     float pdfDiffuse, pdfSpecular;
 
