@@ -117,26 +117,32 @@ public:
 						}
 					}
 #elif (TASK_NUMBER == 3)
+#define SAMPLE_BRDF
+//#define SAMPLE_LIGHT
+#define SAMPLE_WEIGHT 1.f
 					for (int i=0; i<mScene.GetLightCount(); i++)
 					{
 						const AbstractLight* light = mScene.GetLightPtr(i);
 						assert(light != 0);
 
 						Vec3f wig;
-						float lightDist;
 						Vec3f illum(0);
 						float pdfLight, pdfBrdf;
 
+#ifdef SAMPLE_LIGHT
+						float lightDist;
 						illum = light->sampleIllumination(mRng, surfPt, frame, wig, lightDist, pdfLight);
 						if(illum.Max() > 0)
 						{
 							pdfBrdf = mat.getPdf(frame.ToLocal(wig), wol);
-							float weight = 1.f /(pdfLight + pdfBrdf);
+							float weight = pdfLight /(pdfLight + pdfBrdf);
 
 							if ( ! mScene.Occluded(surfPt, wig, lightDist) )
-								LoDirect += illum * mat.evalBrdf(frame.ToLocal(wig), wol) * weight;
+								LoDirect += illum * mat.evalBrdf(frame.ToLocal(wig), wol) * (1.f / pdfLight) * SAMPLE_WEIGHT;
 						}
+#endif
 
+#ifdef SAMPLE_BRDF
 						Vec2f randomVec = this->mRng.GetVec2f();
 						Vec3f brdf;
 						Vec3f sampleHemisphere = mat.sampleBrdfHemisphere(randomVec, &pdfBrdf, &brdf, wol, this->mRng);
@@ -148,9 +154,9 @@ public:
 							if (lightIsect.lightID >= 0)
 							{
 								pdfLight = mScene.mLights[lightIsect.lightID]->getPdf(reflectedRay);
-								float weight = 1.f / (pdfLight + pdfBrdf);
+								float weight = pdfBrdf / (pdfLight + pdfBrdf);
 								float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
-								LoDirect += mScene.mLights[lightIsect.lightID]->getRadiance() * cosThetaOut * brdf * weight;
+								LoDirect += mScene.mLights[lightIsect.lightID]->getRadiance() * cosThetaOut * brdf * (1.f / pdfBrdf) * SAMPLE_WEIGHT;
 							}
 						}
 						else
@@ -162,11 +168,12 @@ public:
 								{
 									float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
 									pdfLight = light->getPdf(reflectedRay);
-									float weight = 1.f / (pdfLight + pdfBrdf);
-									LoDirect += (cosThetaOut ) * light->getRadiance() * brdf * weight;
+									float weight = pdfBrdf / (pdfLight + pdfBrdf);
+									LoDirect += (cosThetaOut ) * light->getRadiance() * brdf * (1.f / pdfBrdf) * SAMPLE_WEIGHT;
 								}
 							}
 						}
+#endif
 
 					}
 #endif
