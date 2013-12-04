@@ -68,10 +68,10 @@ public:
 		float cosTheta = Dot(aFrame.mZ, oWig);
 		float cosGamma = Dot(-mFrame.mZ, oWig);
 
-		if(cosTheta <= 0 || aSurfPt.z > this->p0.z)
+		if(cosGamma <= 0 || aSurfPt.z > this->p0.z)
 			return Vec3f(0);
-    oPdf =  distSqr * mInvArea / cosGamma;
-		return mRadiance * cosTheta;
+    oPdf =  mInvArea;
+		return mRadiance * cosTheta * cosGamma / distSqr;
 	}
 
 	virtual Vec3f getRadiance() const override
@@ -92,9 +92,9 @@ public:
 		Isect i;
 		if (triangle1.Intersect(ray, i) || triangle2.Intersect(ray, i))
 		{
-			float cosTheta = Dot(-this->mFrame.mZ, ray.dir);
+			float cosGamma = Dot(-this->mFrame.mZ, ray.dir);
 
-			return this->mInvArea * i.dist * i.dist / cosTheta;
+			return this->mInvArea * i.dist * i.dist / cosGamma;
 		}
 		else
 		{
@@ -198,7 +198,7 @@ public:
 
 		if(cosTheta <= 0)
 			return Vec3f(0);
-		return mBackgroundColor * cosTheta * 4 * PI_F;
+		return mBackgroundColor * cosTheta;
 	}
 
 
