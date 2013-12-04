@@ -194,6 +194,7 @@ public:
 		oWig /= oLightDist;
 
 		float cosTheta = Dot(aFrame.mZ, oWig);
+    oPdf = 1.f / (4.f * PI_F);
 
 		if(cosTheta <= 0)
 			return Vec3f(0);
