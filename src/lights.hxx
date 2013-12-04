@@ -9,7 +9,7 @@ class AbstractLight
 {
 public:
 
-	virtual Vec3f sampleIllumination(Rng& rng, const Vec3f& aSurfPt, const Frame& aFrame, Vec3f& oWig, float& oLightDist) const
+	virtual Vec3f sampleIllumination(Rng& rng, const Vec3f& aSurfPt, const Frame& aFrame, Vec3f& oWig, float& oLightDist, float& oPdf) const
 	{
 		return Vec3f(0);
 	}
@@ -48,7 +48,8 @@ public:
 		const Vec3f& aSurfPt, 
 		const Frame& aFrame, 
 		Vec3f& oWig, 
-		float& oLightDist) const
+		float& oLightDist,
+    float& oPdf) const
 	{
 		float a1 = 2, a2 = 2;
 		do
@@ -69,8 +70,8 @@ public:
 
 		if(cosTheta <= 0)
 			return Vec3f(0);
-
-		return mRadiance * cosTheta * cosGamma / (distSqr * mInvArea);
+    oPdf =  distSqr * mInvArea / cosGamma;
+		return mRadiance * cosTheta;
 	}
 
 	virtual Vec3f getRadiance() const override
@@ -123,7 +124,8 @@ public:
 		const Vec3f& aSurfPt, 
 		const Frame& aFrame, 
 		Vec3f& oWig, 
-		float& oLightDist) const
+		float& oLightDist,
+    float& oPdf) const
 	{
 		oWig           = mPosition - aSurfPt;
 		float distSqr  = oWig.LenSqr();
@@ -174,7 +176,8 @@ public:
 		const Vec3f& aSurfPt, 
 		const Frame& aFrame, 
 		Vec3f& oWig, 
-		float& oLightDist) const
+		float& oLightDist,
+    float& oPdf) const
 	{
 		Vec3f p;
 		do
