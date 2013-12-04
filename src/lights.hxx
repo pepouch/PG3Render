@@ -92,7 +92,7 @@ public:
 		Isect i;
 		if (triangle1.Intersect(ray, i) || triangle2.Intersect(ray, i))
 		{
-			float cosTheta = Dot(this->mFrame.mZ, ray.dir);
+			float cosTheta = Dot(-this->mFrame.mZ, ray.dir);
 
 			return this->mInvArea * i.dist * i.dist / cosTheta;
 		}
