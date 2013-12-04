@@ -15,11 +15,13 @@ public:
 	}
 
 	virtual Vec3f getRadiance() const = 0;
-  virtual bool isBackground() const { return false; }
-  virtual float getCosGamma(const Vec3f& dir) const
-  {
-    return 1;
-  }
+	virtual bool isBackground() const { return false; }
+	virtual float getCosGamma(const Vec3f& dir) const
+	{
+		return 1;
+	}
+	
+	virtual float getPdf(const Ray& ray) const = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -63,7 +65,7 @@ public:
 		oWig /= oLightDist;
 
 		float cosTheta = Dot(aFrame.mZ, oWig);
-    float cosGamma = Dot(-mFrame.mZ, oWig);
+		float cosGamma = Dot(-mFrame.mZ, oWig);
 
 		if(cosTheta <= 0)
 			return Vec3f(0);
@@ -76,10 +78,28 @@ public:
 		return this->mRadiance;
 	}
 
-  virtual float getCosGamma(const Vec3f& dir) const override
-  {
-    return Dot(this->mFrame.mZ, dir);
-  }
+	virtual float getCosGamma(const Vec3f& dir) const override
+	{
+		return Dot(this->mFrame.mZ, dir);
+	}
+
+	virtual float getPdf(const Ray& ray) const override
+	{
+		Triangle triangle1(this->p0, this->p0 + this->e1, this->p0 + this->e2, 0);
+		Triangle triangle2(this->p0 + this->e1 + this->e2, this->p0 + this->e1, this->p0 + this->e2, 0);
+
+		Isect i;
+		if (triangle1.Intersect(ray, i) || triangle2.Intersect(ray, i))
+		{
+			float cosTheta = Dot(this->mFrame.mZ, ray.dir);
+
+			return this->mInvArea * i.dist * i.dist / cosTheta;
+		}
+		else
+		{
+			return 0;
+		}
+	}
 
 public:
 	Vec3f p0, e1, e2;
@@ -124,6 +144,11 @@ public:
 		return this->mIntensity;
 	}
 
+	virtual float getPdf(const Ray& ray) const override
+	{
+		return 0;
+	}
+
 public:
 
 	Vec3f mPosition;
@@ -142,7 +167,7 @@ public:
 
 public:
 
-  bool isBackground() const override { return true; }
+	bool isBackground() const override { return true; }
 
 	virtual Vec3f sampleIllumination(
 		Rng& rng,
@@ -176,6 +201,11 @@ public:
 	virtual Vec3f getRadiance() const override
 	{
 		return this->mBackgroundColor;
+	}
+
+	virtual float getPdf(const Ray& ray) const override
+	{
+		return 0;
 	}
 
 	Vec3f mBackgroundColor;

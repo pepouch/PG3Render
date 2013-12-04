@@ -105,6 +105,18 @@ public:
     Vec3x<T>& operator/=(const Vec3x& a)
     { for(int i=0; i<3; i++) Get(i) /= a.Get(i); return *this;}
 
+    bool operator==(const Vec3x& a) const
+    {
+		if (this->x == a.x && this->y == a.y && this->z == a.z)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
     friend T Dot(const Vec3x& a, const Vec3x& b)
     { T res(0); for(int i=0; i<3; i++) res += a.Get(i) * b.Get(i); return res; }
 
