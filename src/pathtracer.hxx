@@ -153,6 +153,20 @@ public:
               LoDirect += mScene.mLights[lightIsect.lightID]->getRadiance() * cosThetaOut * brdf * weight;
             }
           }
+          else
+          {
+            for(int i=0; i<mScene.GetLightCount(); i++)
+				    {
+					    const AbstractLight* light = mScene.GetLightPtr(i);
+              if (light->isBackground())
+              {
+                float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
+                pdfLight = light->getPdf(reflectedRay);
+                float weight = 1.f / (pdfLight + pdfBrdf);
+                LoDirect += (cosThetaOut ) * light->getRadiance() * brdf * weight;
+              }
+            }
+          }
 
 				}
 #endif

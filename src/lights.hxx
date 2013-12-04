@@ -208,7 +208,7 @@ public:
 
 	virtual float getPdf(const Ray& ray) const override
 	{
-		return 0;
+		return 1.f / (4.f * PI_F);
 	}
 
 	Vec3f mBackgroundColor;
