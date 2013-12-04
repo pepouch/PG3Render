@@ -68,7 +68,7 @@ public:
 		float cosTheta = Dot(aFrame.mZ, oWig);
 		float cosGamma = Dot(-mFrame.mZ, oWig);
 
-		if(cosTheta <= 0)
+		if(cosTheta <= 0 || aSurfPt.z > this->p0.z)
 			return Vec3f(0);
     oPdf =  distSqr * mInvArea / cosGamma;
 		return mRadiance * cosTheta;
