@@ -136,6 +136,25 @@ public:
 						if ( ! mScene.Occluded(surfPt, wig, lightDist) )
 							LoDirect += illum * mat.evalBrdf(frame.ToLocal(wig), wol) * weight;
 					}
+
+          Vec2f randomVec = this->mRng.GetVec2f();
+          Vec3f brdf;
+          Vec3f sampleHemisphere = mat.sampleBrdfHemisphere(randomVec, &pdfBrdf, &brdf, wol, this->mRng);
+          Ray   reflectedRay(surfPt, frame.ToWorld(sampleHemisphere), 0.001);
+          Isect lightIsect;
+          lightIsect.dist = 1e36f;
+				  if(mScene.Intersect(reflectedRay, lightIsect))
+          {
+            if (lightIsect.lightID >= 0)
+            {
+              pdfLight = mScene.mLights[lightIsect.lightID]->getPdf(reflectedRay);
+              float weight = pdfBrdf / (pdfLight + pdfBrdf);
+              float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
+              LoDirect += mScene.mLights[lightIsect.lightID]->getRadiance() * cosThetaOut
+                * brdf * weight;
+            }
+          }
+
 				}
 #endif
         }
