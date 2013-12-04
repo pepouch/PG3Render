@@ -131,7 +131,7 @@ public:
           if(illum.Max() > 0)
 					{
             pdfBrdf = mat.getPdf(frame.ToLocal(wig), wol);
-            float weight = pdfLight / (pdfLight + pdfBrdf);
+            float weight = 1.f /(pdfLight + pdfBrdf);
 
 						if ( ! mScene.Occluded(surfPt, wig, lightDist) )
 							LoDirect += illum * mat.evalBrdf(frame.ToLocal(wig), wol) * weight;
@@ -148,10 +148,9 @@ public:
             if (lightIsect.lightID >= 0)
             {
               pdfLight = mScene.mLights[lightIsect.lightID]->getPdf(reflectedRay);
-              float weight = pdfBrdf / (pdfLight + pdfBrdf);
+              float weight = 1.f / (pdfLight + pdfBrdf);
               float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
-              LoDirect += mScene.mLights[lightIsect.lightID]->getRadiance() * cosThetaOut
-                * brdf * weight;
+              LoDirect += mScene.mLights[lightIsect.lightID]->getRadiance() * cosThetaOut * brdf * weight;
             }
           }
 
