@@ -1,7 +1,7 @@
 #ifndef PATHTRACER_HXX_
 #define PATHTRACER_HXX_
 
-#define TASK_NUMBER 2
+#define TASK_NUMBER 3
 #define SUBTASK_NUMBER 2
 
 #include <vector>
@@ -116,8 +116,29 @@ public:
             }
           }
         }
-        }
+#elif (TASK_NUMBER == 3)
+        for (int i=0; i<mScene.GetLightCount(); i++)
+				{
+					const AbstractLight* light = mScene.GetLightPtr(i);
+					assert(light != 0);
+
+					Vec3f wig;
+          float lightDist;
+					Vec3f illum(0);
+          float pdfLight, pdfBrdf;
+
+					illum = light->sampleIllumination(mRng, surfPt, frame, wig, lightDist, pdfLight);
+          if(illum.Max() > 0)
+					{
+            pdfBrdf = mat.getPdf(frame.ToLocal(wig), wol);
+            float weight = pdfLight / (pdfLight + pdfBrdf);
+
+						if ( ! mScene.Occluded(surfPt, wig, lightDist) )
+							LoDirect += illum * mat.evalBrdf(frame.ToLocal(wig), wol) * weight;
+					}
+				}
 #endif
+        }
 
 				mFramebuffer.AddColor(sample, LoDirect);
 
