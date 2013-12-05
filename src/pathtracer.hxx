@@ -47,8 +47,9 @@ public:
 				Vec3f LoDirect = Vec3f(0);
 
 				// if the ray intersected a light source, simply add radiance and continue
-				if (isect.lightID >= 0)
+        if (isect.lightID >= 0 && mScene.GetLightPtr(isect.lightID)->getCosGamma(-ray.dir) > EPS_COSINE) {
 					LoDirect = mScene.GetLightPtr(isect.lightID)->getRadiance();
+        }
 				else
 				{			
 					const Vec3f surfPt = ray.org + ray.dir * isect.dist;
@@ -163,10 +164,12 @@ public:
 							if (lightIsect.lightID >= 0)
 							{
                 const AbstractLight* light = mScene.GetLightPtr(lightIsect.lightID);
-
-								pdfLight = light->getPdf(reflectedRay, lightIsect);
-								float weight = pdfBrdf / (pdfLight + pdfBrdf);
-								LoDirect += light->getRadiance() * cosThetaOut * (brdf / pdfBrdf) * SAMPLE_WEIGHT;
+                if (light->getCosGamma(-reflectedRay.dir) > EPS_COSINE)
+                {
+								  pdfLight = light->getPdf(reflectedRay, lightIsect);
+								  float weight = pdfBrdf / (pdfLight + pdfBrdf);
+								  LoDirect += light->getRadiance() * cosThetaOut * (brdf / pdfBrdf) * SAMPLE_WEIGHT;
+                }
 							}
 						}
 						else
