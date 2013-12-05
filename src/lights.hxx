@@ -71,10 +71,11 @@ public:
 
 		float cosTheta = Dot(aFrame.mZ, oWig);
 		float cosGamma = Dot(-mFrame.mZ, oWig);
+    oPdf =  mInvArea;
 
 		if(cosGamma < EPS_COSINE)
 			return Vec3f(0);
-    oPdf =  mInvArea;
+
 		return mRadiance * cosTheta * cosGamma / distSqr;
 	}
 
@@ -133,6 +134,7 @@ public:
 		oWig /= oLightDist;
 
 		float cosTheta = Dot(aFrame.mZ, oWig);
+    oPdf = 1;
 
 		if(cosTheta <= 0)
 			return Vec3f(0);
@@ -147,8 +149,13 @@ public:
 
 	virtual float getPdf(const Ray& ray, const Isect& iSect) const override
 	{
-		return 0;
+		return 1;
 	}
+  
+  virtual float transformPdfToLight(float pdfBrdf, const Vec3f& wig, float distance) const
+  {
+    return 0;
+  }
 
 public:
 
