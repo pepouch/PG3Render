@@ -117,9 +117,12 @@ public:
 						}
 					}
 #elif (TASK_NUMBER == 3)
+
 #define SAMPLE_BRDF
 //#define SAMPLE_LIGHT
 #define SAMPLE_WEIGHT 1.f
+
+#ifdef SAMPLE_LIGHT
 					for (int i=0; i<mScene.GetLightCount(); i++)
 					{
 						const AbstractLight* light = mScene.GetLightPtr(i);
@@ -129,7 +132,7 @@ public:
 						Vec3f illum(0);
 						float pdfLight = 0, pdfBrdf = 0;
 
-#ifdef SAMPLE_LIGHT
+
 						float lightDist;
 						illum = light->sampleIllumination(mRng, surfPt, frame, wig, lightDist, pdfLight);
 						if(illum.Max() > 0)
@@ -140,11 +143,13 @@ public:
 							if ( ! mScene.Occluded(surfPt, wig, lightDist) )
 								LoDirect += illum * mat.evalBrdf(frame.ToLocal(wig), wol) * (1.f / pdfLight) * SAMPLE_WEIGHT;
 						}
+          }
 #endif
 
 #ifdef SAMPLE_BRDF
 						Vec2f randomVec = this->mRng.GetVec2f();
 						Vec3f brdf(0);
+            float pdfLight = 0, pdfBrdf = 0;
 						Vec3f sampleHemisphere = mat.sampleBrdfHemisphere(randomVec, &pdfBrdf, &brdf, wol, this->mRng);
 						Ray   reflectedRay(surfPt, frame.ToWorld(sampleHemisphere), 0.001f);
 						Isect lightIsect;
@@ -174,8 +179,6 @@ public:
 							}
 						}
 #endif
-
-					}
 #endif
 				}
 
