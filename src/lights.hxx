@@ -81,7 +81,7 @@ public:
 
 	virtual float getCosGamma(const Vec3f& dir) const override
 	{
-		return Dot(-this->mFrame.mZ, dir);
+		return Dot(this->mFrame.mZ, dir);
 	}
 
 	virtual float getPdf(const Ray& ray, const Isect& iSect) const override

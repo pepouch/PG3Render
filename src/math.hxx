@@ -4,8 +4,9 @@
 // for portability issues
 #define PI_F     3.14159265358979f
 #define INFTY_F	 1e36f
-#define EPSILON_F 2.*std::numeric_limits<float>::epsilon()
 #define INV_PI_F (1.f / PI_F)
+#define EPS_COSINE 1e-6f
+#define EPS_RAY    1e-3f
 
 template<typename T>
 T Sqr(const T& a) { return a*a; }
