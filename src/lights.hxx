@@ -20,6 +20,10 @@ public:
 	{
 		return 1;
 	}
+  virtual float transformPdfToLight(float pdfBrdf, const Vec3f& wig, float distance) const
+  {
+    return pdfBrdf;
+  }
 	 
 	virtual float getPdf(const Ray& ray, const Isect& iSect) const = 0;
 };
@@ -89,6 +93,13 @@ public:
 		float cosGamma = Dot(-this->mFrame.mZ, ray.dir);
 		return this->mInvArea * iSect.dist * iSect.dist / cosGamma;
 	}
+
+  virtual float transformPdfToLight(float pdfBrdf, const Vec3f& wig, float distance) const
+  {
+    pdfBrdf *= this->getCosGamma(-wig);
+    pdfBrdf /= distance * distance;
+    return pdfBrdf;
+  }
 
 public:
 	Vec3f p0, e1, e2;

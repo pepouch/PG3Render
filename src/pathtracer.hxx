@@ -140,8 +140,7 @@ public:
 						if(illum.Max() > 0)
 						{
 							pdfBrdf = mat.getPdf(frame.ToLocal(wig), wol);
-              pdfBrdf *= light->getCosGamma(-wig);
-              pdfBrdf /= lightDist * lightDist;
+              pdfBrdf = light->transformPdfToLight(pdfBrdf, wig, lightDist);
 							float weight = pdfLight /(pdfLight + pdfBrdf);
 
 							if ( ! mScene.Occluded(surfPt, wig, lightDist) )
