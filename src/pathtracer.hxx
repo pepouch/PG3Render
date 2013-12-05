@@ -99,7 +99,7 @@ public:
 							float cosThetaOut = Dot(frame.mZ, reflectedRay.dir);
 							float cosThetaIn = std::abs(Dot(frame.mZ, -ray.dir));
 							float distSqr = lightIsect.dist * lightIsect.dist;
-							float cosGammaLight = mScene.mLights[lightIsect.lightID]->getCosGamma(-reflectedRay.dir);
+							float cosGammaLight = mScene.mLights[lightIsect.lightID]->getCosGamma(reflectedRay.dir);
 							LoDirect = mScene.mLights[lightIsect.lightID]->getRadiance() * cosThetaOut
 								* brdf / (pdf);
 						}
@@ -119,8 +119,8 @@ public:
 #elif (TASK_NUMBER == 3)
 
 #define SAMPLE_BRDF
-//#define SAMPLE_LIGHT
-#define SAMPLE_WEIGHT 1.f
+#define SAMPLE_LIGHT
+#define SAMPLE_WEIGHT weight
 
 #ifdef SAMPLE_LIGHT
 					for (int i=0; i<mScene.GetLightCount(); i++)
@@ -138,6 +138,8 @@ public:
 						if(illum.Max() > 0)
 						{
 							pdfBrdf = mat.getPdf(frame.ToLocal(wig), wol);
+              pdfBrdf *= light->getCosGamma(wig);
+              pdfBrdf /= lightDist * lightDist;
 							float weight = pdfLight /(pdfLight + pdfBrdf);
 
 							if ( ! mScene.Occluded(surfPt, wig, lightDist) )
