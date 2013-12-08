@@ -10,6 +10,7 @@
 #include "scene.hxx"
 #include "eyelight.hxx"
 #include "pathtracer.hxx"
+#include "pathtracer_direct.hxx"
 #include "config.hxx"
 
 #include <omp.h>
