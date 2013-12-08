@@ -13,6 +13,7 @@
 #include "eyelight.hxx"
 #include "pathtracer.hxx"
 #include "pathtracer_direct.hxx"
+#include "pathtracer_global.hxx"
 
 #include <omp.h>
 #include <string>
@@ -77,7 +78,16 @@ AbstractRenderer* CreateRenderer(
     case Config::kEyeLight:
         return new EyeLight(scene, aSeed);
     case Config::kPathTracing:
+#ifdef TASK_NUMBER
+#if (TASK_NUMBER == 4)
+        return new PathTracerGlobal(scene, aSeed);
+#else
         return new PathTracerDirect(scene, aSeed);
+#endif
+#else
+        return new PathTracerDirect(scene, aSeed);
+#endif
+
     default:
         printf("Unknown algorithm!!\n");
         exit(2);

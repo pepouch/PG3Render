@@ -156,6 +156,7 @@
     <ClInclude Include="src\math.hxx" />
     <ClInclude Include="src\pathtracer.hxx" />
     <ClInclude Include="src\pathtracer_direct.hxx" />
+    <ClInclude Include="src\pathtracer_global.hxx" />
     <ClInclude Include="src\ray.hxx" />
     <ClInclude Include="src\renderer.hxx" />
     <ClInclude Include="src\rng.hxx" />

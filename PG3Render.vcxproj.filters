@@ -65,5 +65,8 @@
     <ClInclude Include="src\pathtracer_direct.hxx">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\pathtracer_global.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
