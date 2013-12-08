@@ -29,7 +29,8 @@ public:
   {
     SceneHitState(const Material& mat)
       : mat(mat),
-        light(NULL)
+        light(NULL),
+        isect(NULL)
     {
     }
     void setRayFromSample(const Vec3f& sample)
@@ -47,6 +48,8 @@ public:
     float pdfLight;
     // pdf of given light sample, as if we were sampling brdf
     float pdfBrdf;
+    // Isect of scene hit by sampledRay
+    Isect* isect;
   };
 
 protected:
@@ -87,14 +90,14 @@ protected:
   {
     
     Vec3f LoDirect(0);
-	  Isect lightIsect;
+	  Isect* lightIsect = new Isect();
     const AbstractLight* light = NULL;
 
-    if(mScene.Intersect(state.sampledRay, lightIsect))
+    if(mScene.Intersect(state.sampledRay, *lightIsect))
 	  {
-		  if (lightIsect.lightID >= 0)
+		  if (lightIsect->lightID >= 0)
 		  {
-        light = mScene.GetLightPtr(lightIsect.lightID);
+        light = mScene.GetLightPtr(lightIsect->lightID);
         if (light->getCosGamma(-state.sampledRay.dir) > EPS_COSINE)
 			    LoDirect = light->getRadiance();
 		  }
@@ -113,8 +116,9 @@ protected:
 	  }
 
     state.light = light;
+    state.isect = lightIsect;
     if (light)
-      state.pdfLight = light->getPdf(state.sampledRay,lightIsect);
+      state.pdfLight = light->getPdf(state.sampledRay, *lightIsect);
     else
       state.pdfLight = 1;
     

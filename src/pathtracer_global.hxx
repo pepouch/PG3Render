@@ -47,17 +47,7 @@ public:
           sceneHitState.frame.SetFromZ(isect.normal);
           sceneHitState.wol = sceneHitState.frame.ToLocal(-ray.dir);
 
-
-					Vec2f randomVec = this->mRng.GetVec2f();
-					float pdf = 0;
-					Vec3f brdf(0);
-					Vec3f sampleHemisphere;
-
-					sampleHemisphere = sceneHitState.mat.sampleBrdfHemisphere(randomVec, &pdf, &brdf, sceneHitState.wol, this->mRng);
-					//brdf = mat.evalBrdf(wol, sampleHemisphere);
-          sceneHitState.setRayFromSample(sampleHemisphere);
-          LoDirect += this->sampleDirection(sceneHitState) * brdf / pdf;
-
+          LoDirect += this->pathForward(sceneHitState);
 				}
 
 				mFramebuffer.AddColor(sample, LoDirect);
@@ -66,4 +56,36 @@ public:
 
 		mIterations++;
 	}
+
+  Vec3f pathForward(SceneHitState state)
+  {
+    float roulette = this->mRng.GetFloat();
+    float reflectance = state.mat.mDiffuseReflectance.Max() + state.mat.mPhongReflectance.Max();
+    if (roulette > reflectance)
+      return Vec3f(0);
+
+    Vec2f randomVec = this->mRng.GetVec2f();
+		float pdf = 0;
+		Vec3f brdf(0);
+		Vec3f sampleHemisphere;
+
+		sampleHemisphere = state.mat.sampleBrdfHemisphere(randomVec, &pdf, &brdf, state.wol, this->mRng);
+		//brdf = mat.evalBrdf(wol, sampleHemisphere);
+    state.setRayFromSample(sampleHemisphere);
+    Vec3f illum = this->sampleDirection(state);;
+    
+    if (state.light != NULL)
+      return illum  * brdf / (pdf * reflectance);
+
+    if (state.isect == NULL)
+    {
+      return Vec3f(0);
+    }
+
+    SceneHitState newState(mScene.GetMaterial(state.isect->matID));
+    newState.surfPt = state.sampledRay.org + state.sampledRay.dir * state.isect->dist;
+    newState.frame.SetFromZ(state.isect->normal);
+    newState.wol = newState.frame.ToLocal(-state.sampledRay.dir);
+    return this->pathForward(newState) * brdf / (pdf * reflectance);
+  }
 };
