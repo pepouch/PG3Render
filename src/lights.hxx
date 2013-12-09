@@ -9,23 +9,23 @@ class AbstractLight
 {
 public:
 
-	virtual Vec3f sampleIllumination(Rng& rng, const Vec3f& aSurfPt, const Frame& aFrame, Vec3f& oWig, float& oLightDist, float& oPdf) const
-	{
-		return Vec3f(0);
-	}
+  virtual Vec3f sampleIllumination(Rng& rng, const Vec3f& aSurfPt, const Frame& aFrame, Vec3f& oWig, float& oLightDist, float& oPdf) const
+  {
+    return Vec3f(0);
+  }
 
-	virtual Vec3f getRadiance() const = 0;
-	virtual bool isBackground() const { return false; }
-	virtual float getCosGamma(const Vec3f& dir) const
-	{
-		return 1;
-	}
+  virtual Vec3f getRadiance() const = 0;
+  virtual bool isBackground() const { return false; }
+  virtual float getCosGamma(const Vec3f& dir) const
+  {
+    return 1;
+  }
   virtual float transformPdfToLight(float pdfBrdf, const Vec3f& wig, float distance) const
   {
     return pdfBrdf;
   }
-	 
-	virtual float getPdf(const Ray& ray, const Isect& iSect) const = 0;
+
+  virtual float getPdf(const Ray& ray, const Isect& iSect) const = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -33,67 +33,67 @@ class AreaLight : public AbstractLight
 {
 public:
 
-	AreaLight(
-		const Vec3f &aP0,
-		const Vec3f &aP1,
-		const Vec3f &aP2)
-	{
-		p0 = aP0;
-		e1 = aP1 - aP0;
-		e2 = aP2 - aP0;
+  AreaLight(
+    const Vec3f &aP0,
+    const Vec3f &aP1,
+    const Vec3f &aP2)
+  {
+    p0 = aP0;
+    e1 = aP1 - aP0;
+    e2 = aP2 - aP0;
 
-		Vec3f normal = Cross(e1, e2);
-		float len    = normal.Length();
-		mInvArea     = 2.f / len;
-		mFrame.SetFromZ(normal);
-	}
-	virtual Vec3f sampleIllumination(
-		Rng& rng, 
-		const Vec3f& aSurfPt, 
-		const Frame& aFrame, 
-		Vec3f& oWig, 
-		float& oLightDist,
+    Vec3f normal = Cross(e1, e2);
+    float len    = normal.Length();
+    mInvArea     = 2.f / len;
+    mFrame.SetFromZ(normal);
+  }
+  virtual Vec3f sampleIllumination(
+    Rng& rng, 
+    const Vec3f& aSurfPt, 
+    const Frame& aFrame, 
+    Vec3f& oWig, 
+    float& oLightDist,
     float& oPdf) const
-	{
-		float a1 = 2, a2 = 2;
-		do
-		{
-			a1 = rng.GetFloat();
-			a2 = rng.GetFloat();
-		} while (a1 + a2 > 1.f) ;
+  {
+    float a1 = 2, a2 = 2;
+    do
+    {
+      a1 = rng.GetFloat();
+      a2 = rng.GetFloat();
+    } while (a1 + a2 > 1.f) ;
 
-		Vec3f p = p0 + a1 * e1 + a2 * e2;
-		oWig           = p - aSurfPt;
-		float distSqr  = oWig.LenSqr();
-		oLightDist     = sqrt(distSqr);
+    Vec3f p = p0 + a1 * e1 + a2 * e2;
+    oWig           = p - aSurfPt;
+    float distSqr  = oWig.LenSqr();
+    oLightDist     = sqrt(distSqr);
 
-		oWig /= oLightDist;
+    oWig /= oLightDist;
 
-		float cosTheta = Dot(aFrame.mZ, oWig);
-		float cosGamma = Dot(-mFrame.mZ, oWig);
+    float cosTheta = Dot(aFrame.mZ, oWig);
+    float cosGamma = Dot(-mFrame.mZ, oWig);
     oPdf =  mInvArea;
 
-		if(cosGamma < EPS_COSINE)
-			return Vec3f(0);
+    if(cosGamma < EPS_COSINE)
+      return Vec3f(0);
 
-		return mRadiance * cosTheta * cosGamma / distSqr;
-	}
+    return mRadiance * cosTheta * cosGamma / distSqr;
+  }
 
-	virtual Vec3f getRadiance() const override
-	{
-		return this->mRadiance;
-	}
+  virtual Vec3f getRadiance() const override
+  {
+    return this->mRadiance;
+  }
 
-	virtual float getCosGamma(const Vec3f& dir) const override
-	{
-		return Dot(this->mFrame.mZ, dir);
-	}
+  virtual float getCosGamma(const Vec3f& dir) const override
+  {
+    return Dot(this->mFrame.mZ, dir);
+  }
 
-	virtual float getPdf(const Ray& ray, const Isect& iSect) const override
-	{
-		float cosGamma = Dot(-this->mFrame.mZ, ray.dir);
-		return this->mInvArea * iSect.dist * iSect.dist / cosGamma;
-	}
+  virtual float getPdf(const Ray& ray, const Isect& iSect) const override
+  {
+    float cosGamma = Dot(-this->mFrame.mZ, ray.dir);
+    return this->mInvArea * iSect.dist * iSect.dist / cosGamma;
+  }
 
   virtual float transformPdfToLight(float pdfBrdf, const Vec3f& wig, float distance) const
   {
@@ -103,10 +103,10 @@ public:
   }
 
 public:
-	Vec3f p0, e1, e2;
-	Frame mFrame;
-	Vec3f mRadiance;
-	float mInvArea;
+  Vec3f p0, e1, e2;
+  Frame mFrame;
+  Vec3f mRadiance;
+  float mInvArea;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -114,44 +114,44 @@ class PointLight : public AbstractLight
 {
 public:
 
-	PointLight(const Vec3f& aPosition)
-	{
-		mPosition = aPosition;
-	}
+  PointLight(const Vec3f& aPosition)
+  {
+    mPosition = aPosition;
+  }
 
-	virtual Vec3f sampleIllumination(
-		Rng& rng,
-		const Vec3f& aSurfPt, 
-		const Frame& aFrame, 
-		Vec3f& oWig, 
-		float& oLightDist,
+  virtual Vec3f sampleIllumination(
+    Rng& rng,
+    const Vec3f& aSurfPt, 
+    const Frame& aFrame, 
+    Vec3f& oWig, 
+    float& oLightDist,
     float& oPdf) const
-	{
-		oWig           = mPosition - aSurfPt;
-		float distSqr  = oWig.LenSqr();
-		oLightDist     = sqrt(distSqr);
+  {
+    oWig           = mPosition - aSurfPt;
+    float distSqr  = oWig.LenSqr();
+    oLightDist     = sqrt(distSqr);
 
-		oWig /= oLightDist;
+    oWig /= oLightDist;
 
-		float cosTheta = Dot(aFrame.mZ, oWig);
+    float cosTheta = Dot(aFrame.mZ, oWig);
     oPdf = 1;
 
-		if(cosTheta <= 0)
-			return Vec3f(0);
+    if(cosTheta <= 0)
+      return Vec3f(0);
 
-		return mIntensity * cosTheta / distSqr;
-	}
+    return mIntensity * cosTheta / distSqr;
+  }
 
-	virtual Vec3f getRadiance() const override
-	{
-		return this->mIntensity;
-	}
+  virtual Vec3f getRadiance() const override
+  {
+    return this->mIntensity;
+  }
 
-	virtual float getPdf(const Ray& ray, const Isect& iSect) const override
-	{
-		return 1;
-	}
-  
+  virtual float getPdf(const Ray& ray, const Isect& iSect) const override
+  {
+    return 1;
+  }
+
   virtual float transformPdfToLight(float pdfBrdf, const Vec3f& wig, float distance) const
   {
     return 0;
@@ -159,8 +159,8 @@ public:
 
 public:
 
-	Vec3f mPosition;
-	Vec3f mIntensity;
+  Vec3f mPosition;
+  Vec3f mIntensity;
 };
 
 
@@ -168,55 +168,55 @@ public:
 class BackgroundLight : public AbstractLight
 {
 public:
-	BackgroundLight()
-	{
-		mBackgroundColor = Vec3f(135, 206, 250) / Vec3f(255.f);
-	}
+  BackgroundLight()
+  {
+    mBackgroundColor = Vec3f(135, 206, 250) / Vec3f(255.f);
+  }
 
 public:
 
-	bool isBackground() const override { return true; }
+  bool isBackground() const override { return true; }
 
-	virtual Vec3f sampleIllumination(
-		Rng& rng,
-		const Vec3f& aSurfPt, 
-		const Frame& aFrame, 
-		Vec3f& oWig, 
-		float& oLightDist,
+  virtual Vec3f sampleIllumination(
+    Rng& rng,
+    const Vec3f& aSurfPt, 
+    const Frame& aFrame, 
+    Vec3f& oWig, 
+    float& oLightDist,
     float& oPdf) const
-	{
-		Vec3f p;
-		do
-		{
-			p = Vec3f(2.0f*rng.GetFloat()-1.0f, 2.0f*rng.GetFloat()-1.0f, 2.0f*rng.GetFloat()-1.0f);
-		}
-		while (p.LenSqr() > 1) ;
-		p =  (1/p.Length()) * p;
-		p = 10000.0 * p;
-		oWig           = p - aSurfPt;
-		float distSqr  = oWig.LenSqr();
-		oLightDist     = sqrt(distSqr);
+  {
+    Vec3f p;
+    do
+    {
+      p = Vec3f(2.0f*rng.GetFloat()-1.0f, 2.0f*rng.GetFloat()-1.0f, 2.0f*rng.GetFloat()-1.0f);
+    }
+    while (p.LenSqr() > 1) ;
+    p =  (1/p.Length()) * p;
+    p = 10000.0 * p;
+    oWig           = p - aSurfPt;
+    float distSqr  = oWig.LenSqr();
+    oLightDist     = sqrt(distSqr);
 
-		oWig /= oLightDist;
+    oWig /= oLightDist;
 
-		float cosTheta = Dot(aFrame.mZ, oWig);
+    float cosTheta = Dot(aFrame.mZ, oWig);
     oPdf = 1.f / (4.f * PI_F);
 
-		if(cosTheta <= 0)
-			return Vec3f(0);
-		return mBackgroundColor * cosTheta;
-	}
+    if(cosTheta <= 0)
+      return Vec3f(0);
+    return mBackgroundColor * cosTheta;
+  }
 
 
-	virtual Vec3f getRadiance() const override
-	{
-		return this->mBackgroundColor;
-	}
+  virtual Vec3f getRadiance() const override
+  {
+    return this->mBackgroundColor;
+  }
 
-	virtual float getPdf(const Ray& ray, const Isect& iSect) const override
-	{
-		return 1.f / (4.f * PI_F);
-	}
+  virtual float getPdf(const Ray& ray, const Isect& iSect) const override
+  {
+    return 1.f / (4.f * PI_F);
+  }
 
-	Vec3f mBackgroundColor;
+  Vec3f mBackgroundColor;
 };
