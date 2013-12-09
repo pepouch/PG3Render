@@ -70,21 +70,15 @@ public:
 		Vec3f sampleHemisphere;
 
 		sampleHemisphere = state.mat.sampleBrdfHemisphere(randomVec, &pdf, &brdf, state.wol, this->mRng);
-		//brdf = mat.evalBrdf(wol, sampleHemisphere);
     state.setRayFromSample(sampleHemisphere);
-    Vec3f illum = this->sampleDirection(state);;
+    Vec3f illum = this->sampleDirection(state);
     
     if (state.light != NULL)
       return illum  * brdf / (pdf * reflectance);
 
-    if (state.isect == NULL)
-    {
-      return Vec3f(0);
-    }
-
-    SceneHitState newState(mScene.GetMaterial(state.isect->matID));
-    newState.surfPt = state.sampledRay.org + state.sampledRay.dir * state.isect->dist;
-    newState.frame.SetFromZ(state.isect->normal);
+    SceneHitState newState(mScene.GetMaterial(state.isect.matID));
+    newState.surfPt = state.surfPt + state.sampledRay.dir * state.isect.dist;
+    newState.frame.SetFromZ(state.isect.normal);
     newState.wol = newState.frame.ToLocal(-state.sampledRay.dir);
     return this->pathForward(newState) * brdf / (pdf * reflectance);
   }
