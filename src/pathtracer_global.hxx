@@ -47,7 +47,7 @@ public:
           sceneHitState.frame.SetFromZ(isect.normal);
           sceneHitState.wol = sceneHitState.frame.ToLocal(-ray.dir);
 
-          LoDirect += this->pathForward(sceneHitState, 0);
+          LoDirect += this->pathForwardMIS(sceneHitState, 0);
         }
 
         mFramebuffer.AddColor(sample, LoDirect);
@@ -65,10 +65,11 @@ public:
     return max;
   }
 
-  Vec3f pathForward(SceneHitState state, int depth)
+  // combines light sampling and brdf random walk
+  Vec3f pathForwardMIS(SceneHitState state, int depth)
   {
     float roulette = this->mRng.GetFloat();
-    float reflectance = 1.0f;//std::max(state.mat.mDiffuseReflectance.Max(), state.mat.mPhongReflectance.Max());
+    float reflectance = state.mat.mDiffuseReflectance.Max() + state.mat.mPhongReflectance.Max();
     
     if (roulette > reflectance)
     {
@@ -79,14 +80,25 @@ public:
     float pdf = 0;
     Vec3f brdf(0);
     Vec3f sampleHemisphere;
+    Vec3f LoDirect(0);
 
+    // sample light
+    for (int i=0; i<mScene.GetLightCount(); i++)
+    {
+      Vec3f illum = this->sampleLight(state, i);
+      float weight = state.pdfLight /(state.pdfLight + state.pdfBrdf);
+      LoDirect += illum * state.mat.evalBrdf(state.frame.ToLocal(state.sampledRay.dir), state.wol) * (1.f / (state.pdfLight * reflectance)) * weight;
+    }
+
+    // sample brdf
     sampleHemisphere = state.mat.sampleBrdfHemisphere(randomVec, &pdf, &brdf, state.wol, this->mRng);
     state.setRayFromSample(sampleHemisphere);
     Vec3f illum = this->sampleDirection(state);
+    float weight = pdf / (state.pdfLight + pdf);
 
     if (state.light != nullptr)
     {
-      return illum  * brdf / (pdf * reflectance);
+      return illum  * brdf / (pdf * reflectance) * weight + LoDirect;
     }
 
     float cosThetaOut = Dot(state.frame.mZ, state.sampledRay.dir);
@@ -95,6 +107,11 @@ public:
     newState.surfPt = state.surfPt + state.sampledRay.dir * state.isect.dist;
     newState.frame.SetFromZ(state.isect.normal);
     newState.wol = newState.frame.ToLocal(-state.sampledRay.dir);
-    return this->pathForward(newState, depth+1) * brdf / (pdf * reflectance) * cosThetaOut;
+
+    // Only cotribution from direct illumination is multiplied by weight,
+    // the contribution from indirect (recursive) illumination is not
+    // - according to slide no. 57 :-)
+    return this->pathForwardMIS(newState, depth+1) * brdf / (pdf * reflectance) * cosThetaOut
+       + LoDirect;
   }
 };
