@@ -87,7 +87,7 @@ public:
     {
       Vec3f illum = this->sampleLight(state, i);
       float weight = state.pdfLight /(state.pdfLight + state.pdfBrdf);
-      LoDirect += illum * state.mat.evalBrdf(state.frame.ToLocal(state.sampledRay.dir), state.wol) * (1.f / (state.pdfLight * reflectance)) * weight;
+      LoDirect += illum * state.mat.evalBrdf(state.frame.ToLocal(state.sampledRay.dir), state.wol) * (1.f / (state.pdfLight * reflectance));
     }
 
     // sample brdf
@@ -98,7 +98,7 @@ public:
 
     if (state.light != nullptr)
     {
-      return illum  * brdf / (pdf * reflectance) * weight + LoDirect;
+      return LoDirect;
     }
 
     float cosThetaOut = Dot(state.frame.mZ, state.sampledRay.dir);
