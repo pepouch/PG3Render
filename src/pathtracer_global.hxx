@@ -70,6 +70,8 @@ public:
   {
     float roulette = this->mRng.GetFloat();
     float reflectance = state.mat.mDiffuseReflectance.Max() + state.mat.mPhongReflectance.Max();
+    if (reflectance > 1.0f)
+      reflectance = 1.0f;
     
     if (roulette > reflectance)
     {
