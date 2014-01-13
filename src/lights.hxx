@@ -26,6 +26,12 @@ public:
   }
 
   virtual float getPdf(const Ray& ray, const Isect& iSect) const = 0;
+  virtual Ray generateRay(const Vec2f& sample, float* oPdf) const
+  {
+    if (oPdf)
+      *oPdf = 1.f;
+    return Ray(); 
+  }
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -140,6 +146,11 @@ public:
       return Vec3f(0);
 
     return mIntensity * cosTheta / distSqr;
+  }
+  virtual Ray generateRay(const Vec2f &sample, float* oPdf) const override
+  {
+    Vec3f dir = SampleUniformSphereW(sample, oPdf);
+    return Ray(mPosition, dir, EPS_RAY);
   }
 
   virtual Vec3f getRadiance() const override
