@@ -22,33 +22,42 @@ public:
 
     for(int pixID = 0; pixID < resX * resY; pixID++)
     {
-      const int x = pixID % resX;
-      const int y = pixID / resX;
-
-      const Vec2f sample = Vec2f(float(x), float(y)) + mRng.GetVec2f();
-
-      Ray   ray = mScene.mCamera.GenerateRay(sample);
+      const Vec2f sample = mRng.GetVec2f();
+      float pdf;
+      Ray   ray = mScene.GetLightPtr(0)->generateRay(sample, &pdf);
       Isect isect;
 
       if(mScene.Intersect(ray, isect))
       {
         Vec3f LoDirect = Vec3f(0);
+        SceneHitState sceneHitState(mScene.GetMaterial( isect.matID ));
+        sceneHitState.surfPt = ray.org + ray.dir * isect.dist;
+        sceneHitState.frame.SetFromZ(isect.normal);
+        sceneHitState.wol = sceneHitState.frame.ToLocal(-ray.dir);
 
-        // if the ray intersected a light source, simply add radiance and continue
-        if (isect.lightID >= 0 && mScene.GetLightPtr(isect.lightID)->getCosGamma(-ray.dir) > EPS_COSINE) {
-          LoDirect = mScene.GetLightPtr(isect.lightID)->getRadiance();
+        // for now, only direct connection to the camera
+        if (true) {
+          const Vec3f cameraDir = Normalize(mScene.mCamera.mPosition - sceneHitState.surfPt);
+          const Vec2f rasterHit = mScene.mCamera.WorldToRaster(sceneHitState.surfPt);
+          float cosThetaOut = Dot(sceneHitState.frame.mZ, -ray.dir);
+          Vec3f brdf = sceneHitState.mat.evalBrdf(
+                       sceneHitState.frame.ToLocal(cameraDir),
+                       sceneHitState.frame.ToLocal(-ray.dir));
+          LoDirect = mScene.GetLightPtr(0)->getRadiance() * (1.0f / pdf) * brdf
+                     * cosThetaOut;
+          Ray cameraRay(sceneHitState.surfPt, cameraDir, EPS_RAY);
+          Isect cameraIsect;
+          if (!mScene.Intersect(cameraRay, cameraIsect) || cameraIsect.dist > (mScene.mCamera.mPosition - sceneHitState.surfPt).Length())
+          {
+            mFramebuffer.AddColor(rasterHit, LoDirect * (1.0f/ (float)(resX * resY)));
+          }
         }
         else
         {			
-          SceneHitState sceneHitState(mScene.GetMaterial( isect.matID ));
-          sceneHitState.surfPt = ray.org + ray.dir * isect.dist;
-          sceneHitState.frame.SetFromZ(isect.normal);
-          sceneHitState.wol = sceneHitState.frame.ToLocal(-ray.dir);
-
           LoDirect += this->pathForwardMIS(sceneHitState, 0);
         }
 
-        mFramebuffer.AddColor(sample, LoDirect);
+        //mFramebuffer.AddColor(sample, LoDirect);
       }
     }
 
