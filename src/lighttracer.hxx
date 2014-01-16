@@ -22,42 +22,43 @@ public:
 
     for(int pixID = 0; pixID < resX * resY; pixID++)
     {
-      const Vec2f sample = mRng.GetVec2f();
-      float pdf;
-      Ray   ray = mScene.GetLightPtr(0)->generateRay(sample, &pdf);
-      Isect isect;
-
-      if(mScene.Intersect(ray, isect))
+      for (int lightID = 0; lightID < mScene.GetLightCount(); lightID++)
       {
-        Vec3f LoDirect = Vec3f(0);
-        SceneHitState sceneHitState(mScene.GetMaterial( isect.matID ));
-        sceneHitState.surfPt = ray.org + ray.dir * isect.dist;
-        sceneHitState.frame.SetFromZ(isect.normal);
-        sceneHitState.wol = sceneHitState.frame.ToLocal(-ray.dir);
+        const Vec2f sample = mRng.GetVec2f();
+        float pdf;
+        Ray   ray = mScene.GetLightPtr(lightID)->generateRay(this->mRng, &pdf);
+        Isect isect;
 
-        // for now, only direct connection to the camera
-        if (true) {
-          const Vec3f cameraDir = Normalize(mScene.mCamera.mPosition - sceneHitState.surfPt);
-          const Vec2f rasterHit = mScene.mCamera.WorldToRaster(sceneHitState.surfPt);
-          float cosThetaOut = Dot(sceneHitState.frame.mZ, -ray.dir);
-          Vec3f brdf = sceneHitState.mat.evalBrdf(
-                       sceneHitState.frame.ToLocal(cameraDir),
-                       sceneHitState.frame.ToLocal(-ray.dir));
-          LoDirect = mScene.GetLightPtr(0)->getRadiance() * (1.0f / pdf) * brdf
-                     * cosThetaOut;
-          Ray cameraRay(sceneHitState.surfPt, cameraDir, EPS_RAY);
-          Isect cameraIsect;
-          if (!mScene.Intersect(cameraRay, cameraIsect) || cameraIsect.dist > (mScene.mCamera.mPosition - sceneHitState.surfPt).Length())
-          {
-            mFramebuffer.AddColor(rasterHit, LoDirect * (1.0f/ (float)(resX * resY)));
+        if(mScene.Intersect(ray, isect))
+        {
+          Vec3f LoDirect = Vec3f(0);
+          SceneHitState sceneHitState(mScene.GetMaterial( isect.matID ));
+          sceneHitState.surfPt = ray.org + ray.dir * isect.dist;
+          sceneHitState.frame.SetFromZ(isect.normal);
+          sceneHitState.wol = sceneHitState.frame.ToLocal(-ray.dir);
+
+          // for now, only direct one-bounce connection to the camera
+          if (true) {
+            const Vec3f cameraDir = Normalize(mScene.mCamera.mPosition - sceneHitState.surfPt);
+            const Vec2f rasterHit = mScene.mCamera.WorldToRaster(sceneHitState.surfPt);
+            float cosThetaOut = Dot(sceneHitState.frame.mZ, -ray.dir);
+            Vec3f brdf = sceneHitState.mat.evalBrdf(
+                         sceneHitState.frame.ToLocal(cameraDir),
+                         sceneHitState.frame.ToLocal(-ray.dir));
+            LoDirect = mScene.GetLightPtr(0)->getRadiance() * (1.0f / pdf) * brdf
+                       * cosThetaOut;
+            Ray cameraRay(sceneHitState.surfPt, cameraDir, EPS_RAY);
+            Isect cameraIsect;
+            if (!mScene.Intersect(cameraRay, cameraIsect) || cameraIsect.dist > (mScene.mCamera.mPosition - sceneHitState.surfPt).Length())
+            {
+              mFramebuffer.AddColor(rasterHit, LoDirect * (1.0f/ (float)(resX * resY)));
+            }
+          }
+          else
+          {			
+            LoDirect += this->lightForward(sceneHitState, 0);
           }
         }
-        else
-        {			
-          LoDirect += this->pathForwardMIS(sceneHitState, 0);
-        }
-
-        //mFramebuffer.AddColor(sample, LoDirect);
       }
     }
 
@@ -65,7 +66,7 @@ public:
   }
 
   // combines light sampling and brdf random walk
-  Vec3f pathForwardMIS(SceneHitState state, int depth)
+  Vec3f lightForward(SceneHitState state, int depth)
   {
     float roulette = this->mRng.GetFloat();
     float reflectance = state.mat.mDiffuseReflectance.Max() + state.mat.mPhongReflectance.Max();
@@ -109,7 +110,7 @@ public:
     newState.frame.SetFromZ(state.isect.normal);
     newState.wol = newState.frame.ToLocal(-state.sampledRay.dir);
 
-    return this->pathForwardMIS(newState, depth+1) * brdf / (pdf * reflectance) * cosThetaOut
+    return this->lightForward(newState, depth+1) * brdf / (pdf * reflectance) * cosThetaOut
        + LoDirect;
   }
 };

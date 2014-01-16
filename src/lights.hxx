@@ -26,7 +26,7 @@ public:
   }
 
   virtual float getPdf(const Ray& ray, const Isect& iSect) const = 0;
-  virtual Ray generateRay(const Vec2f& sample, float* oPdf) const
+  virtual Ray generateRay(Rng& rng, float* oPdf) const
   {
     if (oPdf)
       *oPdf = 1.f;
@@ -108,6 +108,24 @@ public:
     return pdfBrdf;
   }
 
+  virtual Ray generateRay(Rng& rng, float* oPdf) const override
+  {
+    float a1 = 2, a2 = 2;
+    do
+    {
+      a1 = rng.GetFloat();
+      a2 = rng.GetFloat();
+    } while (a1 + a2 > 1.f) ;
+
+    Vec3f p = p0 + a1 * e1 + a2 * e2;
+    Vec2f sample = rng.GetVec2f();
+    
+    Vec3f sampleHemisphere = SamplePowerCosHemisphereW(sample, 0, oPdf);
+    if (oPdf)
+      *oPdf *= this->mInvArea;
+    return Ray(p, this->mFrame.ToWorld(sampleHemisphere), EPS_RAY);
+  }
+
 public:
   Vec3f p0, e1, e2;
   Frame mFrame;
@@ -147,8 +165,9 @@ public:
 
     return mIntensity * cosTheta / distSqr;
   }
-  virtual Ray generateRay(const Vec2f &sample, float* oPdf) const override
+  virtual Ray generateRay(Rng& rng, float* oPdf) const override
   {
+    Vec2f sample = rng.GetVec2f();
     Vec3f dir = SampleUniformSphereW(sample, oPdf);
     return Ray(mPosition, dir, EPS_RAY);
   }
