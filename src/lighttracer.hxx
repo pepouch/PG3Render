@@ -24,16 +24,20 @@ public:
     {
       for (int lightID = 0; lightID < mScene.GetLightCount(); lightID++)
       {
-        const Vec2f sample = mRng.GetVec2f();
         float pdfA, pdfW;
         Ray   ray = mScene.GetLightPtr(lightID)->generateRay(this->mRng, &pdfA, &pdfW);
-        Isect isect;
 
         // direct connection light-camera
-        const Vec3f cameraDir = mScene.mCamera.mPosition - ray.org;
+        const Vec3f cameraRay = mScene.mCamera.mPosition - ray.org;
         const Vec2f rasterHit = mScene.mCamera.WorldToRaster(ray.org);
-        mFramebuffer.AddColor(rasterHit, mScene.GetLightPtr(lightID)->getRadiance() * (1.0f/cameraDir.Length()));
+        float len = cameraRay.Length();
+        float cosLightNormalToRay = Dot(Normalize(cameraRay),
+                                        dynamic_cast<const AreaLight*>(mScene.GetLightPtr(lightID))->mFrame.mZ);
+        mFramebuffer.AddColor(rasterHit, mScene.GetLightPtr(lightID)->getRadiance() 
+                                         * (1.0f/cameraRay.LenSqr()) 
+                                         * (cosLightNormalToRay));
 
+        Isect isect;
         if(mScene.Intersect(ray, isect))
         {
           Vec3f LoDirect = Vec3f(0);
@@ -44,19 +48,22 @@ public:
 
           // for now, only one-bounce connection to the camera
           if (true) {
-            const Vec3f cameraDir = Normalize(mScene.mCamera.mPosition - sceneHitState.surfPt);
+            const Vec3f cameraDir = mScene.mCamera.mPosition - sceneHitState.surfPt;
             const Vec2f rasterHit = mScene.mCamera.WorldToRaster(sceneHitState.surfPt);
             float cosThetaOut = Dot(sceneHitState.frame.mZ, -ray.dir);
-            float cosThetaIn = Dot(sceneHitState.frame.mZ, cameraDir);
+            float cosThetaIn = Dot(sceneHitState.frame.mZ, Normalize(cameraDir));
             Vec3f brdf = sceneHitState.mat.evalBrdf(
-                         sceneHitState.frame.ToLocal(cameraDir),
+                         sceneHitState.frame.ToLocal(Normalize(cameraDir)),
                          sceneHitState.frame.ToLocal(-ray.dir));
-            LoDirect = mScene.GetLightPtr(lightID)->getRadiance() * (1.0f / (pdfA * PdfWtoA(pdfW, isect.dist, cosThetaOut))) * brdf
-                       * cosThetaOut * cosThetaIn;
-            Ray cameraRay(sceneHitState.surfPt, cameraDir, EPS_RAY);
+            Ray cameraRay(sceneHitState.surfPt, Normalize(cameraDir), EPS_RAY);
             Isect cameraIsect;
             if (!mScene.Intersect(cameraRay, cameraIsect) || cameraIsect.dist > (mScene.mCamera.mPosition - sceneHitState.surfPt).Length())
             {
+              LoDirect = mScene.GetLightPtr(lightID)->getRadiance() * (1.0f / (pdfA * PdfWtoA(pdfW, isect.dist, cosThetaOut))) * brdf
+                                            * cosThetaOut * cosThetaIn
+                                            * (1.0f / cameraDir.LenSqr())
+                                            * cosLightNormalToRay
+                                            * (1.0f / Sqr(isect.dist));
               mFramebuffer.AddColor(rasterHit, LoDirect);
             }
           }
