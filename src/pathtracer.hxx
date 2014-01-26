@@ -91,6 +91,7 @@ protected:
     Vec3f LoDirect(0);
     Isect lightIsect;
     const AbstractLight* light = NULL;
+    lightIsect.matID = -1;
 
     if(mScene.Intersect(state.sampledRay, lightIsect))
     {

@@ -15,6 +15,23 @@ public:
   PathTracer(aScene, aSeed)
   {}
 
+  Vec3f CameraDir(Vec3f worldPt)
+  {
+    return Normalize(mScene.mCamera.mPosition - worldPt);
+  }
+
+  void HitTheCamera(Vec3f worldPt, Vec3f radiance)
+  {
+    const Vec3f cameraRay = mScene.mCamera.mPosition - worldPt;
+    const Vec2f rasterHit = mScene.mCamera.WorldToRaster(worldPt);
+    float cosToCamera = Dot(Normalize(-cameraRay), this->mScene.mCamera.mForward);
+    mFramebuffer.AddColor(rasterHit, radiance
+                                      * (1.0f/cameraRay.LenSqr())
+                                      * 1.0f/Sqr(cosToCamera)
+                                      * 1.0f/cosToCamera
+                                      * 1.0f / Sqr(2.0f * tan(22.5f/360.0f * 2.0f * PI_F)));
+  }
+
   virtual void RunIteration(int aIteration)
   {
     const int resX = int(mScene.mCamera.mResolution.x);
@@ -28,14 +45,13 @@ public:
         Ray   ray = mScene.GetLightPtr(lightID)->generateRay(this->mRng, &pdfA, &pdfW);
 
         // direct connection light-camera
-        const Vec3f cameraRay = mScene.mCamera.mPosition - ray.org;
-        const Vec2f rasterHit = mScene.mCamera.WorldToRaster(ray.org);
-        float len = cameraRay.Length();
-        float cosLightNormalToRay = Dot(Normalize(cameraRay),
-                                        dynamic_cast<const AreaLight*>(mScene.GetLightPtr(lightID))->mFrame.mZ);
-        mFramebuffer.AddColor(rasterHit, mScene.GetLightPtr(lightID)->getRadiance() 
-                                         * (1.0f/cameraRay.LenSqr()) 
-                                         * (cosLightNormalToRay));
+        Vec3f lightNormal = dynamic_cast<const AreaLight*>(mScene.GetLightPtr(lightID))->mFrame.mZ;
+        float cosCamToNormal = Dot(CameraDir(ray.org), lightNormal);
+        this->HitTheCamera(ray.org, this->mScene.GetLightPtr(lightID)->getRadiance()
+                                    * (1.0f/pdfA)
+                                    * cosCamToNormal);
+
+        float cosRayToNormal = Dot(ray.dir, lightNormal);
 
         Isect isect;
         if(mScene.Intersect(ray, isect))
@@ -45,32 +61,10 @@ public:
           sceneHitState.surfPt = ray.org + ray.dir * isect.dist;
           sceneHitState.frame.SetFromZ(isect.normal);
           sceneHitState.wol = sceneHitState.frame.ToLocal(-ray.dir);
+          sceneHitState.isect = isect;
 
-          // for now, only one-bounce connection to the camera
-          if (true) {
-            const Vec3f cameraDir = mScene.mCamera.mPosition - sceneHitState.surfPt;
-            const Vec2f rasterHit = mScene.mCamera.WorldToRaster(sceneHitState.surfPt);
-            float cosThetaOut = Dot(sceneHitState.frame.mZ, -ray.dir);
-            float cosThetaIn = Dot(sceneHitState.frame.mZ, Normalize(cameraDir));
-            Vec3f brdf = sceneHitState.mat.evalBrdf(
-                         sceneHitState.frame.ToLocal(Normalize(cameraDir)),
-                         sceneHitState.frame.ToLocal(-ray.dir));
-            Ray cameraRay(sceneHitState.surfPt, Normalize(cameraDir), EPS_RAY);
-            Isect cameraIsect;
-            if (!mScene.Intersect(cameraRay, cameraIsect) || cameraIsect.dist > (mScene.mCamera.mPosition - sceneHitState.surfPt).Length())
-            {
-              LoDirect = mScene.GetLightPtr(lightID)->getRadiance() * (1.0f / (pdfA * PdfWtoA(pdfW, isect.dist, cosThetaOut))) * brdf
-                                            * cosThetaOut * cosThetaIn
-                                            * (1.0f / cameraDir.LenSqr())
-                                            * cosLightNormalToRay
-                                            * (1.0f / Sqr(isect.dist));
-              mFramebuffer.AddColor(rasterHit, LoDirect);
-            }
-          }
-          else
-          {			
-            LoDirect += this->lightForward(sceneHitState, 0);
-          }
+          this->lightForward(mScene.GetLightPtr(lightID)->getRadiance() * (1.0f/pdfA) * (1.0f/PdfWtoA(pdfW, isect.dist, sceneHitState.wol.z)) * cosRayToNormal, sceneHitState, 0);
+
         }
       }
     }
@@ -78,9 +72,10 @@ public:
     mIterations++;
   }
 
-  // combines light sampling and brdf random walk
-  Vec3f lightForward(SceneHitState state, int depth)
+
+  void lightForward(Vec3f radiance, SceneHitState state, int depth)
   {
+    if (depth >0) return;
     float roulette = this->mRng.GetFloat();
     float reflectance = state.mat.mDiffuseReflectance.Max() + state.mat.mPhongReflectance.Max();
     if (reflectance > 1.0f)
@@ -88,7 +83,7 @@ public:
     
     if (roulette > reflectance)
     {
-      return Vec3f(0);
+      return;
     }
 
     Vec2f randomVec = this->mRng.GetVec2f();
@@ -97,33 +92,39 @@ public:
     Vec3f sampleHemisphere;
     Vec3f LoDirect(0);
 
-    // sample light
-    for (int i=0; i<mScene.GetLightCount(); i++)
+    // connect to the camera
+    const Vec3f cameraDir = this->CameraDir(state.surfPt);
+    const Vec2f rasterHit = mScene.mCamera.WorldToRaster(state.surfPt);
+    Ray cameraRay(state.surfPt, cameraDir, EPS_RAY);
+    Isect cameraIsect;
+    if (!mScene.Intersect(cameraRay, cameraIsect) || cameraIsect.dist > (mScene.mCamera.mPosition - state.surfPt).Length())
     {
-      Vec3f illum = this->sampleLight(state, i);
-      float weight = state.pdfLight /(state.pdfLight + state.pdfBrdf);
-      LoDirect += illum * state.mat.evalBrdf(state.frame.ToLocal(state.sampledRay.dir), state.wol) * (1.f / (state.pdfLight * reflectance)) * weight;
+      Vec3f L(0);
+      float cosToCamera = Dot(Normalize(-cameraDir), this->mScene.mCamera.mForward);
+      L = radiance 
+                                         * state.mat.evalBrdf(state.wol, state.frame.ToLocal(cameraDir))
+                                         * Dot(state.frame.ToWorld(state.wol), state.frame.mZ)  // cos of incoming light to normal
+                                         * Dot(cameraDir, state.frame.mZ) // cos of outgoing light to normal
+                                         * (1.0f/Sqr(state.isect.dist));   // distance from previous point on scene
+      this->HitTheCamera(state.surfPt, L);
     }
 
     // sample brdf
     sampleHemisphere = state.mat.sampleBrdfHemisphere(randomVec, &pdf, &brdf, state.wol, this->mRng);
     state.setRayFromSample(sampleHemisphere);
     Vec3f illum = this->sampleDirection(state);
-    float weight = pdf / (state.pdfLight + pdf);
-
-    if (state.light != nullptr)
-    {
-      return illum  * brdf / (pdf * reflectance) * weight + LoDirect;
-    }
+    if (state.isect.matID == -1)
+      return;
 
     float cosThetaOut = Dot(state.frame.mZ, state.sampledRay.dir);
+    float cosThetaIn = Dot(state.isect.normal, -state.sampledRay.dir);
 
     SceneHitState newState(mScene.GetMaterial(state.isect.matID));
     newState.surfPt = state.surfPt + state.sampledRay.dir * state.isect.dist;
     newState.frame.SetFromZ(state.isect.normal);
     newState.wol = newState.frame.ToLocal(-state.sampledRay.dir);
 
-    return this->lightForward(newState, depth+1) * brdf / (pdf * reflectance) * cosThetaOut
-       + LoDirect;
+    this->lightForward(radiance * brdf / (pdf /* reflectance*/) * cosThetaOut * cosThetaIn / Sqr(state.isect.dist),
+                       newState, depth+1);
   }
 };
