@@ -105,7 +105,8 @@ public:
                                          * state.mat.evalBrdf(state.wol, state.frame.ToLocal(cameraDir))
                                          * Dot(state.frame.ToWorld(state.wol), state.frame.mZ)  // cos of incoming light to normal
                                          * Dot(cameraDir, state.frame.mZ) // cos of outgoing light to normal
-                                         * (1.0f/Sqr(state.isect.dist));   // distance from previous point on scene
+                                         * (1.0f/Sqr(state.isect.dist))   // distance from previous point on scene
+                                         * (1.0f/reflectance); // this multiplies the probability density of hitting the camera at all
       this->HitTheCamera(state.surfPt, L);
     }
 
