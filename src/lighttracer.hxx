@@ -75,7 +75,7 @@ public:
 
   void lightForward(Vec3f radiance, SceneHitState state, int depth)
   {
-    if (depth >0) return;
+   // if (depth >5) return;
     float roulette = this->mRng.GetFloat();
     float reflectance = state.mat.mDiffuseReflectance.Max() + state.mat.mPhongReflectance.Max();
     if (reflectance > 1.0f)
@@ -107,25 +107,33 @@ public:
                                          * Dot(cameraDir, state.frame.mZ) // cos of outgoing light to normal
                                          * (1.0f/Sqr(state.isect.dist))   // distance from previous point on scene
                                          * (1.0f/reflectance); // this multiplies the probability density of hitting the camera at all
+    //  if (depth == 1)
       this->HitTheCamera(state.surfPt, L);
-    }
+    } 
 
     // sample brdf
+    float dist = state.isect.dist;
+    Vec3f oldNormal = state.isect.normal;
+    float cosThetaIn = state.wol.z;
     sampleHemisphere = state.mat.sampleBrdfHemisphere(randomVec, &pdf, &brdf, state.wol, this->mRng);
     state.setRayFromSample(sampleHemisphere);
     Vec3f illum = this->sampleDirection(state);
+    float cosThetaOut = Dot(oldNormal, state.sampledRay.dir);
     if (state.isect.matID == -1)
       return;
-
-    float cosThetaOut = Dot(state.frame.mZ, state.sampledRay.dir);
-    float cosThetaIn = Dot(state.isect.normal, -state.sampledRay.dir);
 
     SceneHitState newState(mScene.GetMaterial(state.isect.matID));
     newState.surfPt = state.surfPt + state.sampledRay.dir * state.isect.dist;
     newState.frame.SetFromZ(state.isect.normal);
     newState.wol = newState.frame.ToLocal(-state.sampledRay.dir);
+    newState.isect = state.isect;
 
-    this->lightForward(radiance * brdf / (pdf /* reflectance*/) * cosThetaOut * cosThetaIn / Sqr(state.isect.dist),
+    this->lightForward(radiance
+                        * brdf
+                        * (1.0f / (PdfWtoA(pdf, state.isect.dist, Dot(state.isect.normal, -state.sampledRay.dir)) * reflectance))
+                        * cosThetaOut
+                        * cosThetaIn
+                        * (1.0f/Sqr(dist)),
                        newState, depth+1);
   }
 };
