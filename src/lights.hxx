@@ -241,7 +241,6 @@ public:
     return mBackgroundColor * cosTheta;
   }
 
-
   virtual Vec3f getRadiance() const override
   {
     return this->mBackgroundColor;
@@ -250,6 +249,25 @@ public:
   virtual float getPdf(const Ray& ray, const Isect& iSect) const override
   {
     return 1.f / (4.f * PI_F);
+  }
+
+  virtual Ray generateRay(Rng& rng, float* oPdfA, float* oPdfW) const override
+  {
+    Vec3f p;
+    do
+    {
+      p = Vec3f(2.0f*rng.GetFloat()-1.0f, 2.0f*rng.GetFloat()-1.0f, 2.0f*rng.GetFloat()-1.0f);
+    }
+    while (p.LenSqr() > 1) ;
+    Vec3f norm_p = (1/p.Length()) * p;
+    p = 10 * norm_p;
+    Vec2f sample = rng.GetVec2f();
+    Vec3f sampleHemisphere = SamplePowerCosHemisphereW(sample, 0, oPdfW);
+    Frame frame;
+    frame.SetFromZ(-norm_p);
+    if (oPdfA)
+      *oPdfA = 1.0 / (4.f * PI_F);
+    return Ray(p, frame.ToWorld(sampleHemisphere), EPS_RAY);
   }
 
   Vec3f mBackgroundColor;
