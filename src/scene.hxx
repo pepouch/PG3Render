@@ -236,12 +236,13 @@ public:
 		      geometryList->mGeometry.push_back(new Sphere(rightBallCenter, smallRadius, 7));
         }
 
+        // Cylinder
         if (aBoxMask & kCylinder)
         {          
           float outerRadius = 0.3f;
-          float innerRadius = 0.15f;
+          float innerRadius = 0.25f;
 
-          geometryList->mGeometry.push_back(new Cylinder(Vec3f(0.5, -0.5, -1.4), Vec3f(0.5, -0.5, -1.2), outerRadius, 7));
+          geometryList->mGeometry.push_back(new Cylinder(Vec3f(0.5, -0.5, -1.4), Vec3f(0.5, -0.5, -1.1), outerRadius, innerRadius, 7));
         }
 
         //////////////////////////////////////////////////////////////////////////

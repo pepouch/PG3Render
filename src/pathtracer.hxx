@@ -1,7 +1,7 @@
 #ifndef PATHTRACER_HXX_
 #define PATHTRACER_HXX_
 
-#define TASK_NUMBER 5
+#define TASK_NUMBER 4
 #define SUBTASK_NUMBER 2
 
 #include <vector>
