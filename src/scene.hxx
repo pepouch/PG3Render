@@ -242,7 +242,7 @@ public:
           float outerRadius = 0.3f;
           float innerRadius = 0.25f;
 
-          geometryList->mGeometry.push_back(new Cylinder(Vec3f(0.5, -0.5, -1.4), Vec3f(0.5, -0.5, -1.1), outerRadius, innerRadius, 7));
+          geometryList->mGeometry.push_back(new Cylinder(Vec3f(0.5, -0.5, -1.4), Vec3f(0.5, -0.5, -1.2), outerRadius, innerRadius, 7));
         }
 
         //////////////////////////////////////////////////////////////////////////
