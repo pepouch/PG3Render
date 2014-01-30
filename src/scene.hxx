@@ -97,6 +97,7 @@ public:
         kLightEnv          = 8,
         // geometry flags
         kSpheres           = 64,
+        kCylinder          = 128,
         kWalls             = 256,
         // material flags
         kSpheresDiffuse    = 512,
@@ -224,7 +225,6 @@ public:
         // Spheres
         if( aBoxMask & kSpheres )
         {
-
           float smallRadius = 0.5f;
           Vec3f leftWallCenter  = (cb[0] + cb[4]) * (1.f / 2.f) + Vec3f(0, 0, smallRadius);
           Vec3f rightWallCenter = (cb[1] + cb[5]) * (1.f / 2.f) + Vec3f(0, 0, smallRadius);
@@ -233,7 +233,15 @@ public:
           Vec3f rightBallCenter = rightWallCenter - Vec3f(2.f * xlen / 7.f, -xlen/4, 0);
 
           geometryList->mGeometry.push_back(new Sphere(leftBallCenter,  smallRadius, 6));
-          geometryList->mGeometry.push_back(new Sphere(rightBallCenter, smallRadius, 7));
+		      geometryList->mGeometry.push_back(new Sphere(rightBallCenter, smallRadius, 7));
+        }
+
+        if (aBoxMask & kCylinder)
+        {          
+          float outerRadius = 0.3f;
+          float innerRadius = 0.15f;
+
+          geometryList->mGeometry.push_back(new Cylinder(Vec3f(0.5, -0.5, -1.4), Vec3f(0.5, -0.5, -1.2), outerRadius, 7));
         }
 
         //////////////////////////////////////////////////////////////////////////

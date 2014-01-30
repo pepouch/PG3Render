@@ -239,3 +239,95 @@ public:
   float radius;
   int   matID;
 };
+
+class Cylinder : public AbstractGeometry
+{
+public:
+
+  Cylinder(){}
+
+  Cylinder(
+    const Vec3f &aCenterBottom,
+    const Vec3f &aCenterTop,
+    float       aRadius,
+    int         aMatID) :
+  centerBottom(aCenterBottom), centerTop(aCenterTop), radius(aRadius), matID(aMatID)
+  {
+  }
+
+  // Taken from:
+  // http://wiki.cgsociety.org/index.php/Ray_Sphere_Intersection
+
+  virtual bool Intersect(
+    const Ray &aRay,
+    Isect     &oResult) const
+  {
+    // we transform ray origin into object space (center == origin)
+    const Vec3f transformedOrigin = aRay.org - centerBottom;
+
+    const float A = aRay.dir.x*aRay.dir.x + aRay.dir.y*aRay.dir.y;
+    const float B = 2 * (aRay.dir.x * transformedOrigin.x + aRay.dir.y*transformedOrigin.y);
+    const float C = (transformedOrigin.x*transformedOrigin.x + transformedOrigin.y*transformedOrigin.y) - (radius * radius);
+
+    // Must use doubles, because when B ~ sqrt(B*B - 4*A*C)
+    // the resulting t is imprecise enough to get around ray epsilons
+    const double disc = B*B - 4*A*C;
+
+    if(disc < 0)
+      return false;
+
+    const double discSqrt = std::sqrt(disc);
+    const double q = (B < 0) ? ((-B - discSqrt) / 2.f) : ((-B + discSqrt) / 2.f);
+
+    double t0 = q / A;
+    double t1 = C / q;
+
+    if(t0 < t1) std::swap(t0, t1);
+
+    float resT;
+
+    if(t0 > aRay.tmin && t0 < oResult.dist)
+      resT = float(t0);
+    else if(t1 > aRay.tmin && t1 < oResult.dist)
+      resT = float(t1);
+    else
+      return false;
+
+    oResult.dist   = resT;
+    oResult.matID  = matID;
+    oResult.normal = Normalize(transformedOrigin + Vec3f(resT) * aRay.dir);
+
+    double z = aRay.org.z + resT*aRay.dir.z;
+
+    return z >= this->centerBottom.z && z <= this->centerTop.z;//this->centerBottom.z && z <= this->centerTop.z);
+  }
+
+  virtual void GrowBBox(
+    Vec3f &aoBBoxMin,
+    Vec3f &aoBBoxMax)
+  {
+    for(int i=0; i<8; i++)
+    {
+      Vec3f p = centerBottom;
+      Vec3f half(radius);
+
+      for(int j=0; j<3; j++)
+        if(i & (1 << j)) half.Get(j) = -half.Get(j);
+
+      p += half;
+
+      for(int j=0; j<3; j++)
+      {
+        aoBBoxMin.Get(j) = std::min(aoBBoxMin.Get(j), p.Get(j));
+        aoBBoxMax.Get(j) = std::max(aoBBoxMax.Get(j), p.Get(j));
+      }
+    }
+  }
+
+public:
+
+  Vec3f centerTop;
+  Vec3f centerBottom;
+  float radius;
+  int   matID;
+};
