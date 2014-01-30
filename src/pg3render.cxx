@@ -126,7 +126,7 @@ int main(int argc, const char *argv[])
 
   // If number of threads is invalid, set 1 thread per processor
   if(config.mNumThreads <= 0)
-    config.mNumThreads  = std::max(1, omp_get_num_procs());
+    config.mNumThreads  = std::max(1, omp_get_num_procs()-1);
 
   // When some error has been encountered, exits
   if(config.mScene == NULL)

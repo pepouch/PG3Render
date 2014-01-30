@@ -45,13 +45,12 @@ public:
         Ray   ray = mScene.GetLightPtr(lightID)->generateRay(this->mRng, &pdfA, &pdfW);
 
         // direct connection light-camera
-        Vec3f lightNormal = dynamic_cast<const AreaLight*>(mScene.GetLightPtr(lightID))->mFrame.mZ;
-        float cosCamToNormal = Dot(CameraDir(ray.org), lightNormal);
+        float cosCamToNormal = mScene.GetLightPtr(lightID)->getCosGamma(CameraDir(ray.org));
         this->HitTheCamera(ray.org, this->mScene.GetLightPtr(lightID)->getRadiance()
                                     * (1.0f/pdfA)
                                     * cosCamToNormal);
-
-        float cosRayToNormal = Dot(ray.dir, lightNormal);
+                                    
+        float cosRayToNormal = mScene.GetLightPtr(lightID)->getCosGamma(ray.dir);
 
         Isect isect;
         if(mScene.Intersect(ray, isect))
@@ -61,9 +60,17 @@ public:
           sceneHitState.surfPt = ray.org + ray.dir * isect.dist;
           sceneHitState.frame.SetFromZ(isect.normal);
           sceneHitState.wol = sceneHitState.frame.ToLocal(-ray.dir);
+
+          float pdfWinA = PdfWtoA(pdfW, isect.dist, sceneHitState.wol.z);
+          if (mScene.GetLightPtr(lightID)->isBackground())
+          {
+            // in case of background light, the term dist^2 is in the numerator and in the denominator, so will can lower the numerical errors by crossing them out
+            isect.dist = 1.0f;
+          }
           sceneHitState.isect = isect;
 
-          this->lightForward(mScene.GetLightPtr(lightID)->getRadiance() * (1.0f/pdfA) * (1.0f/PdfWtoA(pdfW, isect.dist, sceneHitState.wol.z)) * cosRayToNormal, sceneHitState, 0);
+          if (sceneHitState.wol.z > 0)
+            this->lightForward(mScene.GetLightPtr(lightID)->getRadiance() * (1.0f/pdfA) * (1.0f/pdfWinA) * cosRayToNormal, sceneHitState, 0);
 
         }
       }
