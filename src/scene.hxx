@@ -23,6 +23,9 @@ public:
 
         for(size_t i=0; i<mLights.size(); i++)
           delete mLights[i];
+
+        for(size_t i=0; i<mMaterials.size(); i++)
+          delete mMaterials[i];
       }
 
       bool Intersect(
@@ -61,7 +64,7 @@ public:
 
       const Material& GetMaterial(const int aMaterialIdx) const
       {
-        return mMaterials[aMaterialIdx];
+        return *mMaterials[aMaterialIdx];
       }
 
       int GetMaterialCount() const
@@ -108,19 +111,19 @@ public:
       };
 
       inline void SetMaterial(
-        Material &aMat, 
+        Material *aMat, 
         const Vec3f& aDiffuseReflectance, 
         const Vec3f& aGlossyReflectance, 
         float aPhongExponent, 
         uint aDiffuse, 
         uint aGlossy)
       {
-        aMat.Reset();
-        aMat.mDiffuseReflectance = aDiffuse ? aDiffuseReflectance : Vec3f(0);
-        aMat.mPhongReflectance   = aGlossy  ? aGlossyReflectance  : Vec3f(0);
-        aMat.mPhongExponent      = aPhongExponent;
+        aMat->Reset();
+        aMat->mDiffuseReflectance = aDiffuse ? aDiffuseReflectance : Vec3f(0);
+        aMat->mPhongReflectance   = aGlossy  ? aGlossyReflectance  : Vec3f(0);
+        aMat->mPhongExponent      = aPhongExponent;
         if( aGlossy ) 
-          aMat.mDiffuseReflectance /= 2; // to make it energy conserving
+          aMat->mDiffuseReflectance /= 2; // to make it energy conserving
       }
 
       void LoadCornellBox(
@@ -142,7 +145,7 @@ public:
           Vec2f(float(aResolution.x), float(aResolution.y)), 45);
 
         // Materials
-        Material mat;
+        Material* mat = new Material();
         // 0) light1, will only emit
         mMaterials.push_back(mat);
         // 1) light2, will only emit
@@ -171,6 +174,11 @@ public:
         // 7) sphere2 (blue)
         SetMaterial(mat, Vec3f(0.152941f, 0.152941f, 0.803922f), Vec3f(0.7f), 600, aBoxMask & kSpheresDiffuse, aBoxMask & kSpheresGlossy);
         mMaterials.push_back(mat);
+
+        // 8) cylinder (mirror)
+        MaterialMirror* mirror = new MaterialMirror();
+        SetMaterial(mirror, Vec3f(0.152941f, 0.152941f, 0.803922f), Vec3f(0.7f), 600, aBoxMask & kSpheresDiffuse, aBoxMask & kSpheresGlossy);
+        mMaterials.push_back(mirror);
 
         delete mGeometry;
 
@@ -240,9 +248,9 @@ public:
         if (aBoxMask & kCylinder)
         {          
           float outerRadius = 0.3f;
-          float innerRadius = 0.25f;
+          float innerRadius = 0.15f;
 
-          geometryList->mGeometry.push_back(new Cylinder(Vec3f(0.5, -0.5, -1.4), Vec3f(0.5, -0.5, -1.2), outerRadius, innerRadius, 7));
+          geometryList->mGeometry.push_back(new Cylinder(Vec3f(0.5, -0.5, 1), Vec3f(0.5, -0.5, 1.2), outerRadius, innerRadius, 8));
         }
 
         //////////////////////////////////////////////////////////////////////////
@@ -414,7 +422,7 @@ public:
 
   AbstractGeometry      *mGeometry;
   Camera                mCamera;
-  std::vector<Material> mMaterials;
+  std::vector<Material*> mMaterials;
   std::vector<AbstractLight*>   mLights;
   std::map<int, int>    mMaterial2Light;
   // SceneSphere           mSceneSphere;

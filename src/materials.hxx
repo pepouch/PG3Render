@@ -127,3 +127,25 @@ public:
   Vec3f mPhongReflectance;
   float mPhongExponent;
 };
+
+
+class MaterialMirror : public Material
+{
+  public:
+  Vec3f sampleBrdfHemisphere(const Vec2f &sample, float* oPdf, Vec3f* oBrdf, const Vec3f& wol, Rng& rng) const
+  {
+    // normal = (0,0,1)
+
+    return Vec3f (-wol.x, -wol.y, wol.z);
+  }
+
+  Vec3f evalBrdf( const Vec3f& wil, const Vec3f& wol ) const
+  {
+    return Vec3f(0, 0, 0);
+  }
+
+  float getPdf(const Vec3f& wil, const Vec3f& wol) const
+  {
+    return 1;
+  }
+};
