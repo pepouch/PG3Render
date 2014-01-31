@@ -28,7 +28,7 @@ public:
   struct SceneHitState
   {
     SceneHitState(const Material& mat)
-      : mat(mat),
+      : mat(&mat),
       light(NULL)
     {
     }
@@ -39,7 +39,7 @@ public:
     Vec3f surfPt;
     Frame frame;
     Vec3f wol;
-    const Material& mat;
+    const Material* mat;
     Ray sampledRay;
     // light hit by sampledRay
     const AbstractLight* light;
@@ -77,7 +77,7 @@ protected:
         LoDirect += illum;
     }
 
-    state.pdfBrdf = state.mat.getPdf(state.frame.ToLocal(wig), state.wol);
+    state.pdfBrdf = state.mat->getPdf(state.frame.ToLocal(wig), state.wol);
     state.pdfBrdf = light->transformPdfToLight(state.pdfBrdf, wig, lightDist);
 
     state.pdfLight = pdf;

@@ -69,7 +69,7 @@ public:
   Vec3f pathForwardMIS(SceneHitState state, int depth)
   {
     float roulette = this->mRng.GetFloat();
-    float reflectance = state.mat.mDiffuseReflectance.Max() + state.mat.mPhongReflectance.Max();
+    float reflectance = state.mat->mDiffuseReflectance.Max() + state.mat->mPhongReflectance.Max();
     if (reflectance > 1.0f)
       reflectance = 1.0f;
     
@@ -89,11 +89,11 @@ public:
     {
       Vec3f illum = this->sampleLight(state, i);
       float weight = state.pdfLight /(state.pdfLight + state.pdfBrdf);
-      LoDirect += illum * state.mat.evalBrdf(state.frame.ToLocal(state.sampledRay.dir), state.wol) * (1.f / (state.pdfLight * reflectance)) * weight;
+      LoDirect += illum * state.mat->evalBrdf(state.frame.ToLocal(state.sampledRay.dir), state.wol) * (1.f / (state.pdfLight * reflectance)) * weight;
     }
 
     // sample brdf
-    sampleHemisphere = state.mat.sampleBrdfHemisphere(randomVec, &pdf, &brdf, state.wol, this->mRng);
+    sampleHemisphere = state.mat->sampleBrdfHemisphere(randomVec, &pdf, &brdf, state.wol, this->mRng);
     state.setRayFromSample(sampleHemisphere);
     Vec3f illum = this->sampleDirection(state);
     float weight = pdf / (state.pdfLight + pdf);

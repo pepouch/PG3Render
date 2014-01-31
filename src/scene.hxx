@@ -24,8 +24,8 @@ public:
         for(size_t i=0; i<mLights.size(); i++)
           delete mLights[i];
 
-        for(size_t i=0; i<mMaterials.size(); i++)
-          delete mMaterials[i];
+        //for(size_t i=0; i<mMaterials.size(); i++)
+        //  delete mMaterials[i];
       }
 
       bool Intersect(
@@ -184,7 +184,7 @@ public:
         // 8) cylinder (mirror)
         mat = new Material();
         MaterialMirror* mirror = new MaterialMirror();
-        SetMaterial(mirror, Vec3f(1.0f), Vec3f(1.0f), 600, aBoxMask & kSpheresDiffuse, aBoxMask & kSpheresGlossy);
+        SetMaterial(mirror, Vec3f(0.0f), Vec3f(0.8f), 600, 0, 1);
         mMaterials.push_back(mirror);
 
         delete mGeometry;
@@ -254,10 +254,10 @@ public:
         // Cylinder
         if (aBoxMask & kCylinder)
         {          
-          float outerRadius = 0.3f;
-          float innerRadius = 0.15f;
+          float outerRadius = 0.5f;
+          float innerRadius = 0.45f;
 
-          geometryList->mGeometry.push_back(new Cylinder(Vec3f(0.5, -0.5, -1.4), Vec3f(0.5, -0.5, 0), outerRadius, innerRadius, 8));
+          geometryList->mGeometry.push_back(new Cylinder(Vec3f(0.5, -0.5, -1.4), Vec3f(0.5, -0.5, -1.1), outerRadius, innerRadius, 8));
         }
 
         //////////////////////////////////////////////////////////////////////////

@@ -84,7 +84,7 @@ public:
   {
    // if (depth >5) return;
     float roulette = this->mRng.GetFloat();
-    float reflectance = state.mat.mDiffuseReflectance.Max() + state.mat.mPhongReflectance.Max();
+    float reflectance = state.mat->mDiffuseReflectance.Max() + state.mat->mPhongReflectance.Max();
     if (reflectance > 1.0f)
       reflectance = 1.0f;
     
@@ -109,7 +109,7 @@ public:
       Vec3f L(0);
       float cosToCamera = Dot(Normalize(-cameraDir), this->mScene.mCamera.mForward);
       L = radiance 
-                                         * state.mat.evalBrdf(state.wol, state.frame.ToLocal(cameraDir))
+                                         * state.mat->evalBrdf(state.wol, state.frame.ToLocal(cameraDir))
                                          * Dot(state.frame.ToWorld(state.wol), state.frame.mZ)  // cos of incoming light to normal
                                          * Dot(cameraDir, state.frame.mZ) // cos of outgoing light to normal
                                          * (1.0f/Sqr(state.isect.dist))   // distance from previous point on scene
@@ -122,7 +122,7 @@ public:
     float dist = state.isect.dist;
     Vec3f oldNormal = state.isect.normal;
     float cosThetaIn = state.wol.z;
-    sampleHemisphere = state.mat.sampleBrdfHemisphere(randomVec, &pdf, &brdf, state.wol, this->mRng);
+    sampleHemisphere = state.mat->sampleBrdfHemisphere(randomVec, &pdf, &brdf, state.wol, this->mRng);
     state.setRayFromSample(sampleHemisphere);
     Vec3f illum = this->sampleDirection(state);
     float cosThetaOut = Dot(oldNormal, state.sampledRay.dir);
