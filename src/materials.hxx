@@ -137,7 +137,7 @@ class MaterialMirror : public Material
     // normal = (0,0,1)
 
     *oPdf = 1;
-    *oBrdf = 0.8;
+    *oBrdf = Vec3f(0.8);
     return Vec3f (-wol.x, -wol.y, wol.z);
   }
 

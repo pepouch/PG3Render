@@ -152,32 +152,39 @@ public:
         mMaterials.push_back(mat);
 
         // 2) white floor (and possibly ceiling)
+        mat = new Material();
         SetMaterial(mat, Vec3f(0.803922f, 0.803922f, 0.803922f), Vec3f(0.5f), 90, aBoxMask & kWallsDiffuse, aBoxMask & kWallsGlossy);
         mMaterials.push_back(mat);
 
         // 3) green left wall
+        mat = new Material();
         SetMaterial(mat, Vec3f(0.156863f, 0.803922f, 0.172549f), Vec3f(0.5f), 90, aBoxMask & kWallsDiffuse, aBoxMask & kWallsGlossy);
         mMaterials.push_back(mat);
 
         // 4) red right wall
+        mat = new Material();
         SetMaterial(mat, Vec3f(0.803922f, 0.152941f, 0.152941f), Vec3f(0.5f), 90, aBoxMask & kWallsDiffuse, aBoxMask & kWallsGlossy);
         mMaterials.push_back(mat);
 
         // 5) white back wall
+        mat = new Material();
         SetMaterial(mat, Vec3f(0.803922f, 0.803922f, 0.803922f), Vec3f(0.5f), 90, aBoxMask & kWallsDiffuse, aBoxMask & kWallsGlossy);
         mMaterials.push_back(mat);
 
         // 6) sphere1 (yellow)
+        mat = new Material();
         SetMaterial(mat, Vec3f(0.803922f, 0.803922f, 0.152941f), Vec3f(0.7f), 200, aBoxMask & kSpheresDiffuse, aBoxMask & kSpheresGlossy);
         mMaterials.push_back(mat);
 
         // 7) sphere2 (blue)
+        mat = new Material();
         SetMaterial(mat, Vec3f(0.152941f, 0.152941f, 0.803922f), Vec3f(0.7f), 600, aBoxMask & kSpheresDiffuse, aBoxMask & kSpheresGlossy);
         mMaterials.push_back(mat);
 
         // 8) cylinder (mirror)
+        mat = new Material();
         MaterialMirror* mirror = new MaterialMirror();
-        SetMaterial(mirror, Vec3f(0.152941f, 0.152941f, 0.803922f), Vec3f(0.7f), 600, aBoxMask & kSpheresDiffuse, aBoxMask & kSpheresGlossy);
+        SetMaterial(mirror, Vec3f(1.0f), Vec3f(1.0f), 600, aBoxMask & kSpheresDiffuse, aBoxMask & kSpheresGlossy);
         mMaterials.push_back(mirror);
 
         delete mGeometry;
@@ -209,8 +216,8 @@ public:
           geometryList->mGeometry.push_back(new Triangle(cb[4], cb[0], cb[3], 3));
 
           // Right wall
-          geometryList->mGeometry.push_back(new Triangle(cb[1], cb[5], cb[6], 4));
-          geometryList->mGeometry.push_back(new Triangle(cb[6], cb[2], cb[1], 4));
+          geometryList->mGeometry.push_back(new Triangle(cb[1], cb[5], cb[6], 8));
+          geometryList->mGeometry.push_back(new Triangle(cb[6], cb[2], cb[1], 8));
 
           // Back wall
           geometryList->mGeometry.push_back(new Triangle(cb[0], cb[1], cb[2], 5));
@@ -250,7 +257,7 @@ public:
           float outerRadius = 0.3f;
           float innerRadius = 0.15f;
 
-          geometryList->mGeometry.push_back(new Cylinder(Vec3f(0.5, -0.5, 1), Vec3f(0.5, -0.5, 1.2), outerRadius, innerRadius, 8));
+          geometryList->mGeometry.push_back(new Cylinder(Vec3f(0.5, -0.5, -1.4), Vec3f(0.5, -0.5, 0), outerRadius, innerRadius, 8));
         }
 
         //////////////////////////////////////////////////////////////////////////
