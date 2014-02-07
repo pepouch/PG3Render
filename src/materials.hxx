@@ -18,7 +18,9 @@ public:
     mPhongExponent      = 1.f;
   }
 
-  Vec3f evalBrdf( const Vec3f& wil, const Vec3f& wol ) const
+  virtual bool isMirror() const { return false; }
+
+  virtual Vec3f evalBrdf( const Vec3f& wil, const Vec3f& wol ) const
   {
     return this->evalBrdfDiffuse(wil, wol) + this->evalBrdfSpecular(wil, wol);
   }
@@ -43,7 +45,7 @@ private:
   }
 
 public:
-  Vec3f sampleBrdfHemisphere(const Vec2f &sample, float* oPdf, Vec3f* oBrdf, const Vec3f& wol, Rng& rng) const
+  virtual Vec3f sampleBrdfHemisphere(const Vec2f &sample, float* oPdf, Vec3f* oBrdf, const Vec3f& wol, Rng& rng) const
   {
     Vec3f dir;
     float pdf;
@@ -104,7 +106,7 @@ private:
     return result;
   }
 public:
-  float getPdf(const Vec3f& wil, const Vec3f& wol) const
+  virtual float getPdf(const Vec3f& wil, const Vec3f& wol) const
   {
     float pdfDiffuse, pdfSpecular;
 
@@ -132,7 +134,12 @@ public:
 class MaterialMirror : public Material
 {
   public:
-  Vec3f sampleBrdfHemisphere(const Vec2f &sample, float* oPdf, Vec3f* oBrdf, const Vec3f& wol, Rng& rng) const
+    virtual bool isMirror() const override
+    {
+      return true;
+    }
+
+  Vec3f sampleBrdfHemisphere(const Vec2f &sample, float* oPdf, Vec3f* oBrdf, const Vec3f& wol, Rng& rng) const override
   {
     // normal = (0,0,1)
 
@@ -141,12 +148,12 @@ class MaterialMirror : public Material
     return Vec3f (-wol.x, -wol.y, wol.z);
   }
 
-  Vec3f evalBrdf( const Vec3f& wil, const Vec3f& wol ) const
+  Vec3f evalBrdf( const Vec3f& wil, const Vec3f& wol ) const override
   {
     return Vec3f(0, 0, 0);
   }
 
-  float getPdf(const Vec3f& wil, const Vec3f& wol) const
+  float getPdf(const Vec3f& wil, const Vec3f& wol) const override
   {
     return 1;
   }

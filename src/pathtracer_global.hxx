@@ -46,6 +46,7 @@ public:
           sceneHitState.surfPt = ray.org + ray.dir * isect.dist;
           sceneHitState.frame.SetFromZ(isect.normal);
           sceneHitState.wol = sceneHitState.frame.ToLocal(-ray.dir);
+          sceneHitState.isect = isect;
 
           LoDirect += this->pathForwardMIS(sceneHitState, 0);
         }
@@ -93,11 +94,14 @@ public:
     }
 
     // sample brdf
+    bool isMirror = mScene.GetMaterial(state.isect.matID).isMirror();
     sampleHemisphere = state.mat->sampleBrdfHemisphere(randomVec, &pdf, &brdf, state.wol, this->mRng);
     state.setRayFromSample(sampleHemisphere);
     Vec3f illum = this->sampleDirection(state);
     float weight = pdf / (state.pdfLight + pdf);
-
+    if (isMirror)
+      weight = 1.0f;
+    
     if (state.light != nullptr)
     {
       return illum  * brdf / (pdf * reflectance) * weight + LoDirect;
@@ -109,6 +113,7 @@ public:
     newState.surfPt = state.surfPt + state.sampledRay.dir * state.isect.dist;
     newState.frame.SetFromZ(state.isect.normal);
     newState.wol = newState.frame.ToLocal(-state.sampledRay.dir);
+    newState.isect = state.isect;
 
     // Only cotribution from direct illumination is multiplied by weight,
     // the contribution from indirect (recursive) illumination is not

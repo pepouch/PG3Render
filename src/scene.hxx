@@ -184,7 +184,7 @@ public:
         // 8) cylinder (mirror)
         mat = new Material();
         MaterialMirror* mirror = new MaterialMirror();
-        SetMaterial(mirror, Vec3f(0.0f), Vec3f(0.8f), 600, 0, 1);
+        SetMaterial(mirror, Vec3f(0.0f), Vec3f(1.0f), 0, 0, 1);
         mMaterials.push_back(mirror);
 
         delete mGeometry;
@@ -216,8 +216,8 @@ public:
           geometryList->mGeometry.push_back(new Triangle(cb[4], cb[0], cb[3], 3));
 
           // Right wall
-          geometryList->mGeometry.push_back(new Triangle(cb[1], cb[5], cb[6], 8));
-          geometryList->mGeometry.push_back(new Triangle(cb[6], cb[2], cb[1], 8));
+          geometryList->mGeometry.push_back(new Triangle(cb[1], cb[5], cb[6], 4));
+          geometryList->mGeometry.push_back(new Triangle(cb[6], cb[2], cb[1], 4));
 
           // Back wall
           geometryList->mGeometry.push_back(new Triangle(cb[0], cb[1], cb[2], 5));
