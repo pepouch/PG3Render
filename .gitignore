@@ -16,6 +16,7 @@
 *.opensdf
 *.sdf
 *.suo
+*.user
 
 # Folders
 ipch
