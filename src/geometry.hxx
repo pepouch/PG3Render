@@ -311,48 +311,26 @@ public:
 private:
   bool computeOuterCylinder(const Ray &aRay, const Vec3f aTransformedOrigin, Isect &oResult, float& oIntersectsUpperCap, float& oIntersectsLowerCap) const
   {
-    const float A = aRay.dir.x*aRay.dir.x + aRay.dir.y*aRay.dir.y;
-    const float B = 2 * (aRay.dir.x * aTransformedOrigin.x + aRay.dir.y*aTransformedOrigin.y);
-    const float C = (aTransformedOrigin.x*aTransformedOrigin.x + aTransformedOrigin.y*aTransformedOrigin.y) - (outerRadius * outerRadius);
-
-    // Must use doubles, because when B ~ sqrt(B*B - 4*A*C)
-    // the resulting t is imprecise enough to get around ray epsilons
-    const double disc = B*B - 4*A*C;
-
-    if(disc >= 0)
-    {
-      const double discSqrt = std::sqrt(disc);
-      const double q = (B < 0) ? ((-B - discSqrt) / 2.f) : ((-B + discSqrt) / 2.f);
-
-      double t0 = q / A;
-      double t1 = C / q;
-
-      float resT;
-      bool retval = this->chooseIntersection(aRay, t0, t1, oResult.dist, resT, oIntersectsUpperCap, oIntersectsLowerCap);
-
-      if (retval)
-      {
-        oResult.dist   = resT;
-        oResult.matID  = matID;
-        oResult.normal = Normalize(aTransformedOrigin + Vec3f(resT) * aRay.dir);
-      }
-
-      return retval;
-    }
-    else
-    {
-      return false;
-    }
+    return this->computeCylinder(this->outerRadius, aRay, aTransformedOrigin, oResult, oIntersectsUpperCap, oIntersectsLowerCap);
   }
 
   bool computeInnerCylinder(const Ray &aRay, const Vec3f aTransformedOrigin, Isect &oResult, float& oIntersectsUpperCap, float& oIntersectsLowerCap) const
   {
-    const float A = aRay.dir.x*aRay.dir.x + aRay.dir.y*aRay.dir.y;
-    const float B = 2 * (aRay.dir.x * aTransformedOrigin.x + aRay.dir.y*aTransformedOrigin.y);
-    const float C = (aTransformedOrigin.x*aTransformedOrigin.x + aTransformedOrigin.y*aTransformedOrigin.y) - (innerRadius * innerRadius);
+    bool retval = this->computeCylinder(this->innerRadius, aRay, aTransformedOrigin, oResult, oIntersectsUpperCap, oIntersectsLowerCap);
+    if (retval)
+    {
+      oResult.normal *= -1;
+    }
 
-    // Must use doubles, because when B ~ sqrt(B*B - 4*A*C)
-    // the resulting t is imprecise enough to get around ray epsilons
+    return retval;
+  }
+
+  bool computeCylinder(const float radius, const Ray &aRay, const Vec3f aTransformedOrigin, Isect &oResult, float& oIntersectsUpperCap, float& oIntersectsLowerCap) const
+  {
+	const float A = aRay.dir.x*aRay.dir.x + aRay.dir.y*aRay.dir.y;
+    const float B = 2 * (aRay.dir.x * aTransformedOrigin.x + aRay.dir.y*aTransformedOrigin.y);
+    const float C = (aTransformedOrigin.x*aTransformedOrigin.x + aTransformedOrigin.y*aTransformedOrigin.y) - (radius * radius);
+
     const double disc = B*B - 4*A*C;
 
     if(disc >= 0)
@@ -370,7 +348,7 @@ private:
       {
         oResult.dist   = resT;
         oResult.matID  = matID;
-        oResult.normal = -Normalize(aTransformedOrigin + Vec3f(resT) * aRay.dir);
+        oResult.normal = Normalize(Vec3f(1, 1, 0) * aTransformedOrigin + resT * Vec3f(1, 1, 0) * aRay.dir);
       }
 
       return retval;
