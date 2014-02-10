@@ -101,6 +101,8 @@ public:
     const Ray &aRay,
     Isect     &oResult) const
   {
+    if (Dot(aRay.dir, mNormal) > 0)
+      return false;
     const Vec3f ao = p[0] - aRay.org;
     const Vec3f bo = p[1] - aRay.org;
     const Vec3f co = p[2] - aRay.org;
