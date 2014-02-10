@@ -85,7 +85,7 @@ protected:
     return LoDirect;
   }
 
-  Vec3f sampleDirection(SceneHitState& state)
+  Vec3f sampleDirection(SceneHitState& state, bool withoutCos = false)
   {
 
     Vec3f LoDirect(0);
@@ -123,6 +123,8 @@ protected:
       state.pdfLight = 1;
 
     float cosThetaOut = Dot(state.frame.mZ, state.sampledRay.dir);
+    if (withoutCos)
+      cosThetaOut = 1.f;
     return LoDirect * cosThetaOut;
   }
 

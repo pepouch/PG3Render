@@ -97,7 +97,7 @@ public:
     bool isMirror = mScene.GetMaterial(state.isect.matID).isMirror();
     sampleHemisphere = state.mat->sampleBrdfHemisphere(randomVec, &pdf, &brdf, state.wol, this->mRng);
     state.setRayFromSample(sampleHemisphere);
-    Vec3f illum = this->sampleDirection(state);
+    Vec3f illum = this->sampleDirection(state, isMirror);
     float weight = pdf / (state.pdfLight + pdf);
     if (isMirror)
       weight = 1.0f;
@@ -108,6 +108,8 @@ public:
     }
 
     float cosThetaOut = Dot(state.frame.mZ, state.sampledRay.dir);
+    if (isMirror)
+      cosThetaOut = 1.f;
 
     SceneHitState newState(mScene.GetMaterial(state.isect.matID));
     newState.surfPt = state.surfPt + state.sampledRay.dir * state.isect.dist;
