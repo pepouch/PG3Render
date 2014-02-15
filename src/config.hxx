@@ -15,6 +15,7 @@
 #include "pathtracer_direct.hxx"
 #include "pathtracer_global.hxx"
 #include "lighttracer.hxx"
+#include "bpt.hxx"
 
 #include <omp.h>
 #include <string>
@@ -84,6 +85,8 @@ AbstractRenderer* CreateRenderer(
     return new PathTracerGlobal(scene, aSeed);
 #elif (TASK_NUMBER == 5)
     return new LightTracer(scene, aSeed);
+#elif (TASK_NUMBER == 6)
+    return new BPTracer(scene, aSeed);
 #else
     return new PathTracerDirect(scene, aSeed);
 #endif

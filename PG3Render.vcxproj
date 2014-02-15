@@ -146,6 +146,7 @@
     <ClCompile Include="src\pg3render.cxx" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\bpt.hxx" />
     <ClInclude Include="src\camera.hxx" />
     <ClInclude Include="src\config.hxx" />
     <ClInclude Include="src\eyelight.hxx" />

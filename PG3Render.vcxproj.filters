@@ -71,5 +71,8 @@
     <ClInclude Include="src\lighttracer.hxx">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\bpt.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
