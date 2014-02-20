@@ -11,6 +11,8 @@
 template<typename T>
 T Sqr(const T& a) { return a*a; }
 
+float Inv(float a) { return 1.f / a; }
+
 typedef unsigned uint;
 
 //////////////////////////////////////////////////////////////////////////

@@ -17,6 +17,9 @@ struct PathNode
 
   const Material* mat;
   const AbstractLight* light;
+  int pixelX, pixelY;
+
+  Vec3f capacity;
 };
 
 class Path
@@ -35,6 +38,7 @@ public:
     lightNode.pdf = pdfA;
     lightNode.brdf = 1.f;
     lightNode.mat = &this->scene.GetMaterial(lightID);
+    lightNode.capacity = Inv(lightNode.pdf) * lightNode.light->getRadiance();
     Isect isect;
     if (scene.Intersect(ray, isect))
     {
@@ -49,7 +53,14 @@ public:
       newNode.dist1 = lightNode.dist2;
       newNode.pdf = PdfWtoA(pdfW, newNode.dist1, newNode.cosWo1);
       newNode.mat = &this->scene.GetMaterial(isect.matID);
-      newNode.light = this->scene.GetLightPtr(isect.matID);
+      newNode.light = NULL;
+      if (isect.lightID >= 0)
+        this->scene.GetLightPtr(isect.matID);
+      newNode.capacity = lightNode.capacity
+        * lightNode.cosWo2
+        * Inv(Sqr(newNode.dist1))
+        * newNode.cosWo1
+        * Inv(newNode.pdf);
       this->path.push_back(lightNode);
       this->path.push_back(newNode);
       return true;
@@ -61,10 +72,51 @@ public:
     }
   }
 
+  bool createCameraNodeAndNext(Rng& rng, int x, int y)
+  {
+    
+    PathNode camNode;
+    camNode.pdf = 1.f;
+    camNode.brdf = 1.f;
+    const Vec2f sample = Vec2f(float(x), float(y)) + rng.GetVec2f();
+    
+    Ray   ray = this->scene.mCamera.GenerateRay(sample);
+    camNode.surfPt = ray.org;
+    Isect isect;
+
+    if(this->scene.Intersect(ray, isect))
+    {
+      camNode.dist2 = isect.dist;
+      PathNode newNode;
+      newNode.surfPt = camNode.surfPt + camNode.dist2 * ray.dir;
+      newNode.normal = isect.normal;
+      Frame frame;
+      frame.SetFromZ(newNode.normal);
+      newNode.wo1 = frame.ToLocal(-ray.dir);
+      newNode.cosWo1 = newNode.wo1.z;
+      newNode.dist1 = camNode.dist2;
+      newNode.pdf = 1.f;
+      newNode.mat = &this->scene.GetMaterial(isect.matID);
+      newNode.light = NULL;
+      if (isect.lightID >= 0)
+        newNode.light = this->scene.GetLightPtr(isect.matID);
+      this->path.push_back(camNode);
+      this->path.push_back(newNode);
+      return true;
+    }
+    else
+    {
+      this->path.push_back(camNode);
+      return false;
+    }
+  }
+
   bool createNextNode(Rng& rng)
   {
     Vec2f randomVec = rng.GetVec2f();
     PathNode* lastNode = &this->path.back();
+    if (lastNode->light != nullptr)
+      return false;
     float pdf;
     Frame frame;
     frame.SetFromZ(lastNode->normal);
@@ -86,7 +138,15 @@ public:
       newNode.dist1 = lastNode->dist2;
       newNode.pdf = PdfWtoA(pdf, newNode.dist1, newNode.cosWo1);
       newNode.mat = &this->scene.GetMaterial(isect.matID);
-      newNode.light = this->scene.GetLightPtr(isect.matID);
+      newNode.light = NULL;
+      if (isect.lightID >= 0)
+        newNode.light = this->scene.GetLightPtr(isect.matID);
+      newNode.capacity = lastNode->capacity
+        * lastNode->brdf
+        * lastNode->cosWo2
+        * newNode.cosWo1
+        * Inv(Sqr(newNode.dist1))
+        * Inv(newNode.pdf);
       this->path.push_back(newNode);
       return true;
     }
@@ -129,20 +189,16 @@ public:
         Path path(this->mScene);
         bool isNext = path.createLightNodeAndNext(this->mRng, lightID);
 
-        float cosCamToNormal = mScene.GetLightPtr(lightID)->getCosGamma(CameraDir(path.path[0].surfPt));
-        this->HitTheCamera(path.path[0].surfPt, this->mScene.GetLightPtr(lightID)->getRadiance()
-                                    * (1.0f/path.path[0].pdf)
-                                    * cosCamToNormal);
-        if (isNext) {
-          cosCamToNormal = Dot(CameraDir(path.path[1].surfPt), path.path[1].normal);;
-          this->HitTheCamera(path.path[1].surfPt, this->mScene.GetLightPtr(lightID)->getRadiance()
-                                                  * (1.0f / path.path[0].pdf)
-                                                  * (1.0f / Sqr(path.path[0].dist2))
-                                                  * (1.0f / path.path[1].pdf)
-                                                  * path.path[1].cosWo1
-                                                  * path.path[0].cosWo2
-                                                  * cosCamToNormal
-                                                  * 0.5);
+        //float cosCamToNormal = mScene.GetLightPtr(lightID)->getCosGamma(CameraDir(path.path[0].surfPt));
+        this->HitTheCamera(path.path[0], true);
+        int iter = 1;
+        while (isNext) {
+          //if (depth == 1)
+            this->HitTheCamera(path.path[iter]);
+            isNext = path.createNextNode(this->mRng);
+            iter++;
+            if (iter > 5 || (path.path[iter].light != nullptr))
+              break;
         }
         
       }
@@ -151,16 +207,33 @@ public:
     mIterations++;
   }
 
-  void HitTheCamera(Vec3f worldPt, Vec3f radiance)
+  void HitTheCamera(PathNode pn, bool isStartingLight = false)
   {
-    const Vec3f cameraRay = mScene.mCamera.mPosition - worldPt;
-    const Vec2f rasterHit = mScene.mCamera.WorldToRaster(worldPt);
+    const Vec3f cameraRay = mScene.mCamera.mPosition - pn.surfPt;
+    const Vec2f rasterHit = mScene.mCamera.WorldToRaster(pn.surfPt);
     float cosToCamera = Dot(Normalize(-cameraRay), this->mScene.mCamera.mForward);
-    mFramebuffer.AddColor(rasterHit, radiance
-                                      * (1.0f/cameraRay.LenSqr())
-                                      * 1.0f/Sqr(cosToCamera)
-                                      * 1.0f/cosToCamera
-                                      * 1.0f / Sqr(2.0f * tan(22.5f/360.0f * 2.0f * PI_F)));
+    Ray camRay(pn.surfPt, CameraDir(pn.surfPt), EPS_RAY);
+    float cosCamToNormal;
+    Vec3f brdf; 
+    Frame frame; frame.SetFromZ(pn.normal);
+    if (isStartingLight)
+    {
+      cosCamToNormal = pn.light->getCosGamma(camRay.dir);
+      brdf = 1.f;
+    }
+    else
+    {
+      cosCamToNormal = Dot(camRay.dir, pn.normal);
+      brdf = pn.mat->evalBrdf(pn.wo1, frame.ToLocal(camRay.dir));
+    }
+    Isect isect; if (!this->mScene.Intersect(camRay, isect))
+      mFramebuffer.AddColor(rasterHit, pn.capacity
+                                        * brdf
+                                        * cosCamToNormal
+                                        * (1.0f/cameraRay.LenSqr())
+                                        * 1.0f/Sqr(cosToCamera)
+                                        * 1.0f/cosToCamera
+                                        * 1.0f / Sqr(2.0f * tan(22.5f/360.0f * 2.0f * PI_F)));
   }
 
   Vec3f CameraDir(Vec3f worldPt)
